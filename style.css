@@ -195,3 +195,51 @@ button:disabled{opacity:.4;cursor:not-allowed}
   .round-badge{font-size:8px}
   .small-label{font-size:7px}
 }
+
+/* SALAS MULTIJUGADOR */
+.access-shell{max-width:920px;margin:34px auto;padding:0 18px 42px}
+.access-card{padding:clamp(22px,4vw,38px);border:1px solid #30323a;border-radius:15px;background:linear-gradient(145deg,#171920,#101116);box-shadow:0 20px 60px #0005}
+.access-card h1{margin:0 0 12px;font:500 clamp(32px,5vw,48px)/1 var(--serif)}
+.access-card h1 em{color:var(--gold);font-weight:400}
+.access-copy{max-width:680px;color:#aaaab2;font-size:13px;line-height:1.7}
+.access-card>.primary-button{margin-top:20px;min-width:190px}
+.room-code-line{display:flex;align-items:center;gap:14px;margin:20px 0;padding:13px 15px;border:1px solid #383a43;border-radius:9px;background:#0b0d11}
+.room-code-line span{color:#92939d;font-size:9px;letter-spacing:.15em}
+.room-code-line strong{color:var(--gold);font:600 25px var(--serif);letter-spacing:.18em}
+.room-invite-grid{display:grid;grid-template-columns:220px minmax(0,1fr);gap:24px;align-items:start}
+.qr-card{padding:14px;border-radius:10px;background:#fff;color:#222;text-align:center}
+#qrCode{min-height:190px;display:grid;place-items:center}
+#qrCode img,#qrCode canvas{max-width:100%;height:auto}
+.qr-card p{margin:10px 0 0;font-size:10px;font-weight:700}
+.room-details>.secondary-button{margin:8px 0 14px}
+.room-roster{display:flex;flex-direction:column;gap:7px;margin-top:12px}
+.room-player-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 12px;border:1px solid #30323a;border-radius:8px;background:#0d0f13;color:#e8e4dc;font-size:11px}
+.room-player-row small{color:#8bcda1;font-size:8px;letter-spacing:.1em}
+.room-details>.primary-button{width:100%;margin-top:12px}
+.field-label{display:block;margin:18px 0 7px;color:#bcbcc4;font-size:10px;font-weight:700}
+.access-input{width:100%;min-height:43px;padding:0 12px;border:1px solid #393b44;border-radius:8px;background:#090a0e;color:#fff;outline:none}
+.access-input:focus{border-color:#b69a68}
+.player-animal-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:10px 0 18px}
+.player-animal-option{display:flex;min-height:76px;flex-direction:column;align-items:center;justify-content:center;gap:4px;border:1px solid #30323a;border-radius:8px;background:#0c0e12;color:#e4e0d8}
+.player-animal-option span{font-size:25px}
+.player-animal-option small{font-size:9px}
+.player-animal-option.selected{border-color:var(--gold);background:#28231b}
+.player-animal-option:disabled{opacity:.25;cursor:not-allowed}
+#playerJoinBtn{width:100%}
+.waiting-card{text-align:center}
+.waiting-card .access-copy{margin-left:auto;margin-right:auto}
+.waiting-animal{font-size:56px;margin:12px 0}
+.waiting-count{display:inline-block;margin-top:14px;padding:9px 13px;border:1px solid #3d3a32;border-radius:8px;color:var(--gold);font-size:10px;letter-spacing:.12em}
+.player-live-notice{display:flex;flex-direction:column;gap:5px;margin-top:14px;padding:13px 15px;border:1px solid #6d5b39;border-radius:9px;background:#1b1915;color:#e9dfca;font-size:11px}
+.player-live-notice span{color:#aaa6a0;line-height:1.5}
+@media(max-width:600px){
+ .access-shell{margin:18px auto;padding:0 10px 28px}
+ .room-invite-grid{grid-template-columns:1fr}
+ .qr-card{width:min(220px,100%);margin:0 auto}
+ .player-animal-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:5px}
+ .player-animal-option{min-height:68px}
+ .room-code-line{justify-content:space-between}
+}
+
+
+[hidden]{display:none!important}

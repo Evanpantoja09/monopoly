@@ -1,3 +1,10 @@
+import { auth, db } from "./firebase.js";
+import { onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js";
+import {
+  collection, doc, getDoc, onSnapshot,
+  runTransaction, serverTimestamp, setDoc, updateDoc
+} from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
+
 const $ = selector => document.querySelector(selector);
 
 /* CONFIGURACIÓN DE PROPIEDADES */
@@ -219,6 +226,20 @@ let timerInterval = null;
 let toastTimeout = null;
 let isMoving = false;
 let surpriseDeck = [];
+
+/* MULTIJUGADOR: ADMINISTRADOR Y CUATRO JUGADORES */
+let appMode = "admin";
+let currentUid = null;
+let roomCode = null;
+let roomRef = null;
+let roomUnsubscribe = null;
+let rosterUnsubscribe = null;
+let roomRoster = [];
+let selectedPlayerAnimal = null;
+let myPlayerProfile = null;
+let roomSaveTimeout = null;
+let isApplyingRemoteState = false;
+let invitationUrl = "";
 
 /* FUNCIONES GENERALES */
 
@@ -618,6 +639,7 @@ function renderPlayers() {
   });
 
   renderMyProperties();
+  scheduleRoomSync();
 }
 
 function renderMyProperties() {
@@ -718,6 +740,8 @@ function renderTokens() {
       cell.append(mark);
     }
   });
+
+  scheduleRoomSync();
 }
 
 /* HISTORIAL Y AVISOS */
@@ -755,23 +779,66 @@ function showToast(message) {
   },2300);
 }/* INICIAR PARTIDA */
 
-function startGame() {
-  if (!players.every(player => player.animal)) return;
+async function startGame() {
+  if (appMode !== "admin" || !roomRef) return;
+
+  if (roomRoster.length !== 4) {
+    showToast("Necesitas cuatro jugadores para iniciar.");
+    return;
+  }
+
+  players = [...roomRoster]
+    .sort((a,b) => a.seat - b.seat)
+    .map(profile => ({
+      uid: profile.uid,
+      name: profile.name,
+      animal: profile.animal,
+      money: 1000,
+      position: 0,
+      skipNext: false,
+      inJail: false,
+      eliminated: false,
+      mistakeShield: false,
+      rentShield: false,
+      startBonus: 0,
+      extraTime: 0,
+      discountTarget: null
+    }));
 
   started = true;
   gameOver = false;
+  currentPlayer = 0;
+  round = 1;
+  createSpaces();
   shuffleSurpriseDeck();
 
+  $("#adminHomePanel").classList.add("hidden");
+  $("#gameLayout").classList.remove("hidden");
   $("#setupPanel").classList.add("hidden");
+  $("#resetBtn").hidden = false;
   $("#rollBtn").disabled = false;
   $("#rollHelp").textContent = "Lanza los dados para avanzar.";
   $("#centerStatus").textContent = "LA PARTIDA ESTÁ EN CURSO";
+  $("#topRoomLabel").textContent = `SALA ${roomCode}`;
 
-  addLog("La partida ha comenzado. Todos reciben $1.000.");
-
+  addLog("La partida ha comenzado. Los cuatro jugadores reciben $1.000.");
+  renderBoard();
   updateTurnLabel();
   renderPlayers();
   renderTokens();
+
+  try {
+    await updateDoc(roomRef, {
+      status: "playing",
+      gameState: buildGameState(),
+      startedAt: serverTimestamp(),
+      updatedAt: Date.now()
+    });
+    showToast("Partida iniciada. Los celulares ya pueden verla.");
+  } catch (error) {
+    console.error("No se pudo iniciar la partida en Firestore:", error);
+    showToast("No se pudo guardar el inicio. Revisa las reglas de Firestore.");
+  }
 }
 
 /* DADOS Y MOVIMIENTO */
@@ -1656,82 +1723,591 @@ function finishChallenge(advanceTurn=true) {
 
 /* REINICIAR */
 
-function resetGame() {
+async function resetGame() {
+  if (appMode !== "admin") return;
+
   clearInterval(timerInterval);
+  clearTimeout(roomSaveTimeout);
 
   challenge = null;
   started = false;
   gameOver = false;
   isMoving = false;
-
   currentPlayer = 0;
   round = 1;
   selectedSetupPlayer = 0;
-
   surpriseDeck = [];
 
-  createPlayers();
-  createSpaces();
+  players = roomRoster
+    .slice()
+    .sort((a,b) => a.seat - b.seat)
+    .map(profile => ({
+      uid: profile.uid, name: profile.name, animal: profile.animal,
+      money: 1000, position: 0, skipNext: false, inJail: false,
+      eliminated: false, mistakeShield: false, rentShield: false,
+      startBonus: 0, extraTime: 0, discountTarget: null
+    }));
 
+  createSpaces();
   renderBoard();
-  renderSetup();
   renderPlayers();
 
-  $("#setupPanel").classList.remove("hidden");
+  $("#gameLayout").classList.add("hidden");
+  $("#adminHomePanel").classList.remove("hidden");
+  $("#adminWelcomePanel").classList.add("hidden");
+  $("#adminLobbyPanel").classList.remove("hidden");
+  $("#resetBtn").hidden = true;
   $("#modalBackdrop").classList.add("hidden");
-
   $("#rollBtn").disabled = true;
-  $("#rollHelp").textContent =
-    "Los cuatro jugadores deben elegir un animal.";
-
+  $("#rollHelp").textContent = "Los cuatro jugadores están registrados.";
   $("#diceMessage").textContent = "Listos para jugar";
   $("#diceTotal").textContent = "—";
-
   $("#dieOne").dataset.value = 1;
   $("#dieTwo").dataset.value = 1;
-
   $("#roundNumber").textContent = "01";
   $("#roundNumberMobile").textContent = "01";
-
   $("#turnLabel").textContent = "PREPARANDO PARTIDA";
-  $("#centerStatus").textContent = "ELIGE TUS FICHAS PARA COMENZAR";
+  $("#centerStatus").textContent = "ESPERANDO A LOS JUGADORES";
+  $("#logList").innerHTML = '<p class="empty-log">La partida aún no ha comenzado.</p>';
 
-  $("#logList").innerHTML =
-    '<p class="empty-log">La partida aún no ha comenzado.</p>';
+  if (roomRef) {
+    try {
+      await updateDoc(roomRef, {
+        status: "waiting",
+        gameState: null,
+        startedAt: null,
+        updatedAt: Date.now()
+      });
+      renderAdminRoster();
+      showToast("Partida reiniciada. Los jugadores siguen en la sala.");
+    } catch (error) {
+      console.error("Error al reiniciar la sala:", error);
+      showToast("No se pudo reiniciar la sala en Firebase.");
+    }
+  }
 }
 
 /* EVENTOS */
 
-$("#startBtn").addEventListener("click",startGame);
-$("#rollBtn").addEventListener("click",rollDice);
-$("#answerForm").addEventListener("submit",submitAnswer);
+$("#rollBtn").addEventListener("click", rollDice);
+$("#answerForm").addEventListener("submit", submitAnswer);
 
 $("#closeModal").addEventListener("click",() => {
   if (!challenge) return;
-
   if (!challenge.answered) {
     showToast("Debes responder o esperar a que termine el tiempo.");
     return;
   }
-
   finishChallenge();
 });
 
 $("#resetBtn").addEventListener("click",() => {
-  if (confirm("¿Quieres reiniciar toda la partida?")) {
+  if (confirm("¿Quieres reiniciar la partida? Los cuatro jugadores permanecerán en la sala.")) {
     resetGame();
   }
 });
 
 $("#modalBackdrop").addEventListener("click",event => {
-  if (
-    event.target === $("#modalBackdrop") &&
-    challenge?.answered
-  ) {
-    finishChallenge();
-  }
+  if (event.target === $("#modalBackdrop") && challenge?.answered) finishChallenge();
 });
 
-/* ARRANQUE INICIAL */
+$("#adminCreateRoomBtn").addEventListener("click", createRoom);
+$("#adminStartBtn").addEventListener("click", startGame);
+$("#copyRoomLinkBtn").addEventListener("click", async () => {
+  if (!invitationUrl) return;
+  try {
+    await navigator.clipboard.writeText(invitationUrl);
+    showToast("Enlace copiado. Compártelo con los jugadores.");
+  } catch {
+    showToast("No se pudo copiar. Comparte el código de sala manualmente.");
+  }
+});
+$("#playerJoinForm").addEventListener("submit", joinRoom);
 
-resetGame();
+/* AUTENTICACIÓN Y SALAS FIREBASE */
+
+function getSignedInUser() {
+  return new Promise((resolve,reject) => {
+    let unsubscribe = () => {};
+    unsubscribe = onAuthStateChanged(auth, async user => {
+      unsubscribe();
+      try {
+        if (user) {
+          resolve(user);
+        } else {
+          const credential = await signInAnonymously(auth);
+          resolve(credential.user);
+        }
+      } catch (error) {
+        reject(error);
+      }
+    }, reject);
+  });
+}
+
+function randomRoomCode() {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  return Array.from({length:6},() => chars[Math.floor(Math.random()*chars.length)]).join("");
+}
+
+function getInvitationUrl(code) {
+  const url = new URL(window.location.href);
+  url.search = "";
+  url.hash = "";
+  url.searchParams.set("room",code);
+  return url.toString();
+}
+
+async function createRoom() {
+  const button = $("#adminCreateRoomBtn");
+  button.disabled = true;
+  $("#adminMessage").textContent = "Creando sala segura...";
+
+  try {
+    for (let attempt = 0; attempt < 8; attempt++) {
+      const code = randomRoomCode();
+      const candidateRef = doc(db,"rooms",code);
+      const existing = await getDoc(candidateRef);
+      if (existing.exists()) continue;
+
+      await setDoc(candidateRef, {
+        adminUid: currentUid,
+        playerUids: [],
+        status: "waiting",
+        gameState: null,
+        createdAt: serverTimestamp(),
+        updatedAt: Date.now()
+      });
+
+      roomCode = code;
+      roomRef = candidateRef;
+      localStorage.setItem("monopolyAdminRoom",code);
+      invitationUrl = getInvitationUrl(code);
+      showAdminLobby();
+      subscribeToRoom();
+      subscribeToRoster();
+      return;
+    }
+    throw new Error("No se pudo encontrar un código de sala libre. Intenta nuevamente.");
+  } catch (error) {
+    console.error(error);
+    $("#adminMessage").textContent = error.message || "No se pudo crear la sala.";
+    showToast("No se pudo crear la sala. Revisa las reglas de Firestore.");
+  } finally {
+    button.disabled = false;
+  }
+}
+
+function showAdminLobby() {
+  $("#adminHomePanel").classList.remove("hidden");
+  $("#adminWelcomePanel").classList.add("hidden");
+  $("#adminLobbyPanel").classList.remove("hidden");
+  $("#playerJoinPanel").classList.add("hidden");
+  $("#playerWaitingPanel").classList.add("hidden");
+  $("#gameLayout").classList.add("hidden");
+  $("#resetBtn").hidden = true;
+  $("#roomCodeLabel").textContent = roomCode;
+  $("#topRoomLabel").textContent = `SALA ${roomCode}`;
+  invitationUrl = getInvitationUrl(roomCode);
+  const qrContainer = $("#qrCode");
+  qrContainer.innerHTML = "";
+  if (window.QRCode) {
+    new window.QRCode(qrContainer, {
+      text: invitationUrl,
+      width: 190,
+      height: 190,
+      colorDark: "#101116",
+      colorLight: "#ffffff",
+      correctLevel: window.QRCode.CorrectLevel.M
+    });
+  } else {
+    qrContainer.textContent = "No se pudo cargar el generador QR. Comparte el enlace.";
+  }
+}
+
+function subscribeToRoom() {
+  if (roomUnsubscribe) roomUnsubscribe();
+  roomUnsubscribe = onSnapshot(roomRef, snapshot => {
+    if (!snapshot.exists()) {
+      showToast("La sala ya no existe.");
+      return;
+    }
+
+    const data = snapshot.data();
+    if (appMode === "admin") {
+      if (data.adminUid !== currentUid) {
+        showToast("Esta sala pertenece a otra sesión de administrador.");
+        localStorage.removeItem("monopolyAdminRoom");
+        return;
+      }
+      if (data.status === "playing" && data.gameState && !started) {
+        restoreGameState(data.gameState);
+        $("#adminHomePanel").classList.add("hidden");
+        $("#gameLayout").classList.remove("hidden");
+        $("#resetBtn").hidden = false;
+      } else if (data.status === "waiting" && started) {
+        started = false;
+        showAdminLobby();
+      }
+    } else {
+      if ((data.status === "playing" || data.status === "finished") && data.gameState) {
+        renderPlayerGame(data.gameState,data.status);
+      } else if (myPlayerProfile) {
+        showPlayerWaiting(data.status);
+      } else if (data.status === "waiting") {
+        $("#adminHomePanel").classList.add("hidden");
+        $("#playerWaitingPanel").classList.add("hidden");
+        $("#playerJoinPanel").classList.remove("hidden");
+        renderPlayerAnimalChoices();
+      } else {
+        if (rosterUnsubscribe) {
+          rosterUnsubscribe();
+          rosterUnsubscribe = null;
+        }
+        $("#playerJoinMessage").textContent = "La partida ya comenzó y esta sesión no está registrada.";
+        $("#playerJoinBtn").disabled = true;
+        $("#playerJoinPanel").classList.remove("hidden");
+      }
+    }
+  }, error => {
+    console.error("Error al escuchar la sala:",error);
+    showToast("Se perdió la conexión con la sala.");
+  });
+}
+
+function subscribeToRoster() {
+  if (rosterUnsubscribe) rosterUnsubscribe();
+  rosterUnsubscribe = onSnapshot(collection(roomRef,"players"), snapshot => {
+    roomRoster = snapshot.docs.map(item => item.data()).sort((a,b) => a.seat-b.seat);
+    if (appMode === "admin") renderAdminRoster();
+    if (appMode === "player") {
+      renderPlayerAnimalChoices();
+      if (myPlayerProfile) $("#waitingCount").textContent = `${roomRoster.length} / 4 JUGADORES`;
+    }
+  }, error => {
+    console.error("Error al escuchar jugadores:",error);
+  });
+}
+
+function renderAdminRoster() {
+  const list = $("#adminPlayersList");
+  if (!list) return;
+  list.innerHTML = "";
+  for (let index = 0; index < 4; index++) {
+    const profile = roomRoster.find(item => item.seat === index);
+    const row = document.createElement("div");
+    row.className = "room-player-row";
+    const left = document.createElement("span");
+    left.textContent = profile ? `${profile.animal.emoji}  ${profile.name}` : `Jugador ${index+1} · Esperando...`;
+    const right = document.createElement("small");
+    right.textContent = profile ? "CONECTADO" : "LIBRE";
+    row.append(left,right);
+    list.append(row);
+  }
+  $("#adminLobbyStatus").textContent = roomRoster.length === 4
+    ? "Los cuatro jugadores están listos. Puedes iniciar."
+    : `Conectados: ${roomRoster.length} de 4 jugadores.`;
+  $("#adminStartBtn").disabled = roomRoster.length !== 4;
+}
+
+function renderPlayerAnimalChoices() {
+  const grid = $("#playerAnimalGrid");
+  if (!grid) return;
+  grid.innerHTML = "";
+  const usedAnimals = new Set(roomRoster.map(profile => profile.animal?.name));
+  if (selectedPlayerAnimal && usedAnimals.has(selectedPlayerAnimal.name)) {
+    selectedPlayerAnimal = null;
+  }
+
+  ANIMALS.forEach(animal => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "player-animal-option";
+    const taken = usedAnimals.has(animal.name);
+    button.disabled = taken;
+    if (selectedPlayerAnimal?.name === animal.name) button.classList.add("selected");
+    const emoji = document.createElement("span");
+    emoji.textContent = animal.emoji;
+    const name = document.createElement("small");
+    name.textContent = animal.name;
+    button.append(emoji,name);
+    button.addEventListener("click",() => {
+      selectedPlayerAnimal = animal;
+      renderPlayerAnimalChoices();
+      $("#playerJoinBtn").disabled = false;
+    });
+    grid.append(button);
+  });
+  $("#playerJoinBtn").disabled = !selectedPlayerAnimal;
+}
+
+async function joinRoom(event) {
+  event.preventDefault();
+  if (!roomRef || !currentUid || !selectedPlayerAnimal) return;
+  const name = $("#playerNameInput").value.trim().replace(/\s+/g," ");
+  if (name.length < 2 || name.length > 18) {
+    $("#playerJoinMessage").textContent = "Escribe un nombre de entre 2 y 18 caracteres.";
+    return;
+  }
+
+  const button = $("#playerJoinBtn");
+  button.disabled = true;
+  $("#playerJoinMessage").textContent = "Entrando a la sala...";
+
+  try {
+    const playerRef = doc(roomRef,"players",currentUid);
+    let registeredProfile = null;
+
+    await runTransaction(db,async transaction => {
+      const roomSnapshot = await transaction.get(roomRef);
+      if (!roomSnapshot.exists()) throw new Error("La sala no existe.");
+      const roomData = roomSnapshot.data();
+      if (roomData.status !== "waiting") throw new Error("La partida ya comenzó. No se aceptan más jugadores.");
+
+      const existingPlayer = await transaction.get(playerRef);
+      if (existingPlayer.exists()) {
+        registeredProfile = existingPlayer.data();
+        return;
+      }
+
+      const uids = roomData.playerUids || [];
+      if (uids.length >= 4) throw new Error("La sala ya está completa.");
+      if (uids.includes(currentUid)) throw new Error("Tu sesión ya está registrada en esta sala.");
+
+      const existingProfiles = [];
+      for (const uid of uids) {
+        const otherRef = doc(roomRef,"players",uid);
+        const otherSnapshot = await transaction.get(otherRef);
+        if (otherSnapshot.exists()) existingProfiles.push(otherSnapshot.data());
+      }
+      if (existingProfiles.some(profile => profile.animal?.name === selectedPlayerAnimal.name)) {
+        throw new Error("Ese animal ya fue elegido por otro jugador.");
+      }
+
+      registeredProfile = {
+        uid: currentUid,
+        name,
+        animal: selectedPlayerAnimal,
+        seat: uids.length,
+        joinedAt: Date.now()
+      };
+
+      transaction.set(playerRef,registeredProfile);
+      transaction.update(roomRef,{playerUids:[...uids,currentUid]});
+    });
+
+    myPlayerProfile = registeredProfile;
+    $("#waitingAnimal").textContent = registeredProfile.animal.emoji;
+    $("#waitingPlayerText").textContent = `${registeredProfile.name}, ya estás dentro de la sala. Espera a que el administrador inicie la partida.`;
+    $("#playerJoinPanel").classList.add("hidden");
+    $("#playerWaitingPanel").classList.remove("hidden");
+    $("#topRoomLabel").textContent = `SALA ${roomCode}`;
+    showToast("¡Te has unido correctamente!");
+  } catch (error) {
+    console.error("Error al entrar a la sala:",error);
+    $("#playerJoinMessage").textContent = error.message || "No se pudo entrar a la sala.";
+    button.disabled = false;
+    renderPlayerAnimalChoices();
+  }
+}
+
+function showPlayerWaiting(status="waiting") {
+  $("#adminHomePanel").classList.add("hidden");
+  $("#playerJoinPanel").classList.add("hidden");
+  $("#gameLayout").classList.add("hidden");
+  $("#playerWaitingPanel").classList.remove("hidden");
+  $("#resetBtn").hidden = true;
+  $("#waitingCount").textContent = `${roomRoster.length} / 4 JUGADORES`;
+  if (myPlayerProfile) {
+    $("#waitingAnimal").textContent = myPlayerProfile.animal.emoji;
+    $("#waitingPlayerText").textContent = `${myPlayerProfile.name}, espera a que el administrador inicie la partida.`;
+  }
+  if (status === "finished") $("#waitingPlayerText").textContent = "La partida ha terminado.";
+}
+
+function buildGameState() {
+  return {
+    players: players.map(player => ({...player})),
+    spaces: spaces.map(space => ({...space})),
+    currentPlayer,
+    round,
+    started,
+    gameOver,
+    diceOne: Number($("#dieOne").dataset.value || 1),
+    diceTwo: Number($("#dieTwo").dataset.value || 1),
+    diceTotal: $("#diceTotal").textContent,
+    diceMessage: $("#diceMessage").textContent,
+    log: Array.from($("#logList").querySelectorAll(".log-entry span:last-child"))
+      .map(item => item.textContent).slice(0,6)
+  };
+}
+
+function scheduleRoomSync() {
+  if (appMode !== "admin" || !roomRef || !started || isApplyingRemoteState) return;
+  clearTimeout(roomSaveTimeout);
+  roomSaveTimeout = setTimeout(async () => {
+    try {
+      await updateDoc(roomRef,{
+        status: gameOver ? "finished" : "playing",
+        gameState: buildGameState(),
+        updatedAt: Date.now()
+      });
+    } catch (error) {
+      console.error("No se pudo sincronizar la partida:",error);
+      showToast("No se pudo sincronizar. Comprueba tu conexión.");
+    }
+  },450);
+}
+
+function restoreGameState(state) {
+  isApplyingRemoteState = true;
+  players = (state.players || []).map(player => ({...player}));
+  spaces = (state.spaces || []).map(space => ({...space}));
+  currentPlayer = state.currentPlayer || 0;
+  round = state.round || 1;
+  started = !!state.started;
+  gameOver = !!state.gameOver;
+  $("#dieOne").dataset.value = state.diceOne || 1;
+  $("#dieTwo").dataset.value = state.diceTwo || 1;
+  $("#diceTotal").textContent = state.diceTotal || "—";
+  $("#diceMessage").textContent = state.diceMessage || "Partida en curso";
+  $("#roundNumber").textContent = String(round).padStart(2,"0");
+  $("#roundNumberMobile").textContent = String(round).padStart(2,"0");
+  renderBoard();
+  renderPlayers();
+  renderTokens();
+  updateTurnLabel();
+  $("#centerStatus").textContent = gameOver ? "PARTIDA FINALIZADA" : "LA PARTIDA ESTÁ EN CURSO";
+  $("#rollBtn").disabled = gameOver;
+  $("#rollHelp").textContent = gameOver ? "La partida ha terminado." : "Lanza los dados para avanzar.";
+  $("#adminHomePanel").classList.add("hidden");
+  $("#gameLayout").classList.remove("hidden");
+  $("#resetBtn").hidden = false;
+  $("#topRoomLabel").textContent = `SALA ${roomCode}`;
+  if (Array.isArray(state.log)) {
+    $("#logList").innerHTML = "";
+    state.log.slice(0,6).forEach(message => addLog(message));
+  }
+  isApplyingRemoteState = false;
+}
+
+function renderPlayerGame(state,status) {
+  if (!myPlayerProfile) {
+    getDoc(doc(roomRef,"players",currentUid)).then(snapshot => {
+      if (snapshot.exists()) myPlayerProfile = snapshot.data();
+      if (myPlayerProfile) renderPlayerGame(state,status);
+      else showPlayerWaiting(status);
+    }).catch(console.error);
+    return;
+  }
+
+  isApplyingRemoteState = true;
+  players = (state.players || []).map(player => ({...player}));
+  spaces = (state.spaces || []).map(space => ({...space}));
+  currentPlayer = state.currentPlayer || 0;
+  round = state.round || 1;
+  started = !!state.started;
+  gameOver = !!state.gameOver;
+
+  $("#adminHomePanel").classList.add("hidden");
+  $("#playerJoinPanel").classList.add("hidden");
+  $("#playerWaitingPanel").classList.add("hidden");
+  $("#gameLayout").classList.remove("hidden");
+  $("#resetBtn").hidden = true;
+  $("#rollBtn").hidden = true;
+  $("#setupPanel").classList.add("hidden");
+  $("#playerLiveNotice").classList.remove("hidden");
+
+  $("#dieOne").dataset.value = state.diceOne || 1;
+  $("#dieTwo").dataset.value = state.diceTwo || 1;
+  $("#diceTotal").textContent = state.diceTotal || "—";
+  $("#diceMessage").textContent = state.diceMessage || "Partida en curso";
+  $("#roundNumber").textContent = String(round).padStart(2,"0");
+  $("#roundNumberMobile").textContent = String(round).padStart(2,"0");
+
+  renderBoard();
+  renderPlayers();
+  renderTokens();
+  updateTurnLabel();
+  if (Array.isArray(state.log)) {
+    $("#logList").innerHTML = "";
+    state.log.slice(0,6).forEach(message => addLog(message));
+  }
+  $("#centerStatus").textContent = status === "finished" ? "PARTIDA FINALIZADA" : "PARTIDA EN VIVO";
+  const turnPlayer = players[currentPlayer];
+  const isMyTurn = turnPlayer?.uid === currentUid;
+  $("#playerLiveTitle").textContent = isMyTurn ? "¡Es tu turno!" : `Turno de ${turnPlayer?.name || "otro jugador"}`;
+  $("#playerLiveText").textContent = `${myPlayerProfile.name} · ${myPlayerProfile.animal.name}. El administrador gestiona los dados y la banca desde su panel.`;
+  $("#rollBtn").disabled = true;
+  $("#rollHelp").textContent = "El administrador controla los dados y los retos.";
+  isApplyingRemoteState = false;
+}
+
+async function initializeMultiplayerApp() {
+  try {
+    const user = await getSignedInUser();
+    currentUid = user.uid;
+    console.log("Sesión anónima lista:",currentUid);
+
+    const params = new URLSearchParams(window.location.search);
+    const requestedRoom = (params.get("room") || "").trim().toUpperCase();
+
+    if (requestedRoom) {
+      appMode = "player";
+      roomCode = requestedRoom;
+      roomRef = doc(db,"rooms",roomCode);
+      $("#playerRoomCodeLabel").textContent = roomCode;
+      $("#topRoomLabel").textContent = `SALA ${roomCode}`;
+      $("#playerJoinPanel").classList.remove("hidden");
+      const roomSnapshot = await getDoc(roomRef);
+      if (!roomSnapshot.exists()) {
+        $("#playerJoinMessage").textContent = "No encontramos esa sala. Pide al administrador un QR nuevo.";
+        $("#playerJoinBtn").disabled = true;
+        return;
+      }
+      const ownProfile = await getDoc(doc(roomRef,"players",currentUid));
+      if (ownProfile.exists()) myPlayerProfile = ownProfile.data();
+      if (roomSnapshot.data().status === "waiting" || myPlayerProfile) subscribeToRoster();
+      subscribeToRoom();
+      if (myPlayerProfile) showPlayerWaiting(roomSnapshot.data().status);
+      else if (roomSnapshot.data().status !== "waiting") {
+        $("#playerJoinMessage").textContent = "La partida ya comenzó y tu sesión no está registrada.";
+        $("#playerJoinBtn").disabled = true;
+      }
+      return;
+    }
+
+    appMode = "admin";
+    const savedCode = localStorage.getItem("monopolyAdminRoom");
+    if (savedCode) {
+      const savedRef = doc(db,"rooms",savedCode);
+      const savedSnapshot = await getDoc(savedRef);
+      if (savedSnapshot.exists() && savedSnapshot.data().adminUid === currentUid) {
+        roomCode = savedCode;
+        roomRef = savedRef;
+        invitationUrl = getInvitationUrl(roomCode);
+        showAdminLobby();
+        subscribeToRoom();
+        subscribeToRoster();
+        const data = savedSnapshot.data();
+        if (data.status === "playing" && data.gameState) {
+          restoreGameState(data.gameState);
+        }
+        return;
+      }
+      localStorage.removeItem("monopolyAdminRoom");
+    }
+
+    createSpaces();
+    renderBoard();
+    $("#adminHomePanel").classList.remove("hidden");
+    $("#adminWelcomePanel").classList.remove("hidden");
+  } catch (error) {
+    console.error("Error al iniciar la aplicación:",error);
+    showToast("No se pudo conectar con Firebase. Revisa la configuración y las reglas.");
+    $("#adminHomePanel").classList.remove("hidden");
+    $("#adminMessage").textContent = error.message || "Error de conexión con Firebase.";
+  }
+}
+
+initializeMultiplayerApp();

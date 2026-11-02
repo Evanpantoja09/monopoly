@@ -8,194 +8,125 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
-
 <body>
   <header class="topbar">
     <a class="brand" href="#">
       <span class="brand-symbol">∑</span>
-      <span>
-        <strong>MONOPOLY</strong>
-        <em>Matemático</em>
-      </span>
+      <span><strong>MONOPOLY</strong><em>Matemático</em></span>
     </a>
-
-    <div class="top-status">
-      <span class="live-dot"></span>
-      <span>PARTIDA LOCAL</span>
-      <span class="status-divider"></span>
-      <span>RONDA <strong id="roundNumber">01</strong></span>
+    <div class="top-status" id="connectionLabel">
+      <span class="live-dot"></span><span>PARTIDA EN LÍNEA</span>
+      <span class="status-divider"></span><span id="topRoomLabel">SALA NO CREADA</span><span class="status-divider"></span><span>RONDA <strong id="roundNumber">01</strong></span>
     </div>
-
-    <button class="reset-button" id="resetBtn">Reiniciar partida</button>
+    <button class="reset-button" id="resetBtn" hidden>Reiniciar partida</button>
   </header>
 
-  <main class="layout">
+  <!-- PANTALLA DEL ADMINISTRADOR -->
+  <section class="access-shell hidden" id="adminHomePanel">
+    <div class="access-card" id="adminWelcomePanel">
+      <p class="eyebrow">PANEL DE CONTROL</p>
+      <h1>Administrar <em>partida</em></h1>
+      <p class="access-copy">Crea una sala para que los cuatro participantes entren desde sus celulares. Tú administrarás el tablero y la banca; no ocuparás una ficha.</p>
+      <button class="primary-button" id="adminCreateRoomBtn">Crear sala <span class="arrow">↗</span></button>
+      <p class="helper" id="adminMessage">Se creará un código y un QR para compartir con los jugadores.</p>
+    </div>
+
+    <div class="access-card hidden" id="adminLobbyPanel">
+      <p class="eyebrow">SALA DE JUEGO</p>
+      <h1>Invita a los <em>jugadores</em></h1>
+      <div class="room-code-line"><span>CÓDIGO DE SALA</span><strong id="roomCodeLabel">------</strong></div>
+      <div class="room-invite-grid">
+        <div class="qr-card"><div id="qrCode"></div><p>Escanea para entrar</p></div>
+        <div class="room-details">
+          <p class="access-copy">Comparte el QR o el enlace. Cada participante entrará desde su propio celular y escogerá un nombre y un animal.</p>
+          <button class="secondary-button" id="copyRoomLinkBtn">Copiar enlace de invitación</button>
+          <div class="room-roster" id="adminPlayersList"></div>
+          <p class="helper" id="adminLobbyStatus">Esperando a los cuatro jugadores.</p>
+          <button class="primary-button" id="adminStartBtn" disabled>Iniciar partida <span class="arrow">↗</span></button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PANTALLA DE INGRESO PARA LOS JUGADORES -->
+  <section class="access-shell hidden" id="playerJoinPanel">
+    <div class="access-card">
+      <p class="eyebrow">UNIRSE A UNA PARTIDA</p>
+      <h1>Elige tu <em>ficha</em></h1>
+      <p class="access-copy">Sala <strong id="playerRoomCodeLabel">------</strong>. Escribe tu nombre y elige un animal que no haya sido seleccionado por otro participante.</p>
+      <form id="playerJoinForm">
+        <label class="field-label" for="playerNameInput">Tu nombre</label>
+        <input class="access-input" id="playerNameInput" maxlength="18" minlength="2" required placeholder="Escribe tu nombre">
+        <label class="field-label">Elige un animal</label>
+        <div class="player-animal-grid" id="playerAnimalGrid"></div>
+        <button class="primary-button" id="playerJoinBtn" type="submit" disabled>Entrar a la sala <span class="arrow">↗</span></button>
+      </form>
+      <p class="helper" id="playerJoinMessage">Cada animal solo puede ser elegido por una persona.</p>
+    </div>
+  </section>
+
+  <section class="access-shell hidden" id="playerWaitingPanel">
+    <div class="access-card waiting-card">
+      <p class="eyebrow">REGISTRO COMPLETADO</p>
+      <div class="waiting-animal" id="waitingAnimal">🐧</div>
+      <h1>¡Buena <em>suerte!</em></h1>
+      <p class="access-copy" id="waitingPlayerText">Ya estás dentro de la sala. Espera a que el administrador inicie la partida.</p>
+      <div class="waiting-count" id="waitingCount">1 / 4 JUGADORES</div>
+    </div>
+  </section>
+
+  <main class="layout hidden" id="gameLayout">
     <section class="game-area">
       <div class="section-heading">
-        <div>
-          <p class="eyebrow">ESTRATEGIA · CONOCIMIENTO · SUERTE</p>
-          <h1>Monopoly <em>Matemático</em></h1>
-        </div>
+        <div><p class="eyebrow">ESTRATEGIA · CONOCIMIENTO · SUERTE</p><h1>Monopoly <em>Matemático</em></h1></div>
         <div class="round-badge">RONDA <strong id="roundNumberMobile">01</strong></div>
       </div>
-
-      <div class="board-frame">
-        <div class="board" id="board">
-          <div class="board-center">
-            <div class="center-symbol">∑</div>
-            <p class="center-kicker">EL CONOCIMIENTO ES PODER</p>
-            <h2>MONOPOLY<br><em>MATEMÁTICO</em></h2>
-            <div class="center-line"></div>
-            <p class="center-caption">AVANZA · RESUELVE · CONQUISTA</p>
-            <span class="center-status" id="centerStatus">ELIGE TUS FICHAS PARA COMENZAR</span>
-          </div>
+      <div class="board-frame"><div class="board" id="board">
+        <div class="board-center">
+          <div class="center-symbol">∑</div><p class="center-kicker">EL CONOCIMIENTO ES PODER</p>
+          <h2>MONOPOLY<br><em>MATEMÁTICO</em></h2><div class="center-line"></div>
+          <p class="center-caption">AVANZA · RESUELVE · CONQUISTA</p>
+          <span class="center-status" id="centerStatus">ESPERANDO A LOS JUGADORES</span>
         </div>
-      </div>
-
+      </div></div>
       <div class="legend">
-        <span><i class="dot green"></i>Fácil</span>
-        <span><i class="dot blue"></i>Normal</span>
-        <span><i class="dot purple"></i>Elevada</span>
-        <span><i class="dot red"></i>Muy difícil</span>
+        <span><i class="dot green"></i>Fácil</span><span><i class="dot blue"></i>Normal</span>
+        <span><i class="dot purple"></i>Elevada</span><span><i class="dot red"></i>Muy difícil</span>
         <span><i class="dot surprise"></i>Sorpresa</span>
       </div>
+      <div class="player-live-notice hidden" id="playerLiveNotice"><strong id="playerLiveTitle">Partida en vivo</strong><span id="playerLiveText">El administrador está controlando la partida.</span></div>
     </section>
 
     <aside class="sidebar">
       <section class="panel dice-panel">
-        <div class="panel-heading">
-          <div>
-            <p class="eyebrow">MOMENTO DE JUGAR</p>
-            <h2>Lanza los dados</h2>
-          </div>
-          <span class="small-label" id="turnLabel">PREPARANDO PARTIDA</span>
-        </div>
-
+        <div class="panel-heading"><div><p class="eyebrow">MOMENTO DE JUGAR</p><h2>Lanza los dados</h2></div><span class="small-label" id="turnLabel">PREPARANDO PARTIDA</span></div>
         <div class="dice-stage">
-          <div class="die" id="dieOne" data-value="1">
-            <i class="pip p1"></i><i class="pip p2"></i><i class="pip p3"></i>
-            <i class="pip p4"></i><i class="pip p5"></i><i class="pip p6"></i>
-            <i class="pip p7"></i><i class="pip p8"></i><i class="pip p9"></i>
-          </div>
-          <div class="die" id="dieTwo" data-value="1">
-            <i class="pip p1"></i><i class="pip p2"></i><i class="pip p3"></i>
-            <i class="pip p4"></i><i class="pip p5"></i><i class="pip p6"></i>
-            <i class="pip p7"></i><i class="pip p8"></i><i class="pip p9"></i>
-          </div>
+          <div class="die" id="dieOne" data-value="1"><i class="pip p1"></i><i class="pip p2"></i><i class="pip p3"></i><i class="pip p4"></i><i class="pip p5"></i><i class="pip p6"></i><i class="pip p7"></i><i class="pip p8"></i><i class="pip p9"></i></div>
+          <div class="die" id="dieTwo" data-value="1"><i class="pip p1"></i><i class="pip p2"></i><i class="pip p3"></i><i class="pip p4"></i><i class="pip p5"></i><i class="pip p6"></i><i class="pip p7"></i><i class="pip p8"></i><i class="pip p9"></i></div>
         </div>
-
-        <div class="dice-result">
-          <span id="diceMessage">Listos para jugar</span>
-          <strong id="diceTotal">—</strong>
-        </div>
-
-        <button class="primary-button" id="rollBtn" disabled>
-          Tirar los dados <span class="arrow">↗</span>
-        </button>
-        <p class="helper" id="rollHelp">Los cuatro jugadores deben elegir un animal.</p>
+        <div class="dice-result"><span id="diceMessage">Listos para jugar</span><strong id="diceTotal">—</strong></div>
+        <button class="primary-button" id="rollBtn" disabled>Tirar los dados <span class="arrow">↗</span></button>
+        <p class="helper" id="rollHelp">El administrador iniciará la partida.</p>
       </section>
-
-      <section class="panel">
-        <div class="panel-heading">
-          <div>
-            <p class="eyebrow">PARTICIPANTES</p>
-            <h2>Jugadores</h2>
-          </div>
-          <span class="small-label">4 JUGADORES</span>
-        </div>
-        <div class="players-list" id="playersList"></div>
-      </section>
-
-      <section class="panel properties-panel">
-        <div class="panel-heading">
-          <div>
-            <p class="eyebrow">TU PATRIMONIO</p>
-            <h2>Mis propiedades</h2>
-          </div>
-          <span class="small-label" id="propertyCount">0 PROPIEDADES</span>
-        </div>
-        <p class="setup-description" id="propertyOwnerLabel">Propiedades del jugador actual</p>
-        <div id="myPropertiesList" class="my-properties-list">
-          <p class="empty-log">Aún no tienes propiedades.</p>
-        </div>
-      </section>
-
-      <section class="panel" id="setupPanel">
-        <div class="panel-heading">
-          <div>
-            <p class="eyebrow">PERSONALIZA TU PARTIDA</p>
-            <h2>Elige tu ficha</h2>
-          </div>
-          <span class="small-label">ANIMALES</span>
-        </div>
-
-        <p class="setup-description">
-          Cada jugador debe escoger un animal diferente.
-        </p>
-
-        <div class="player-tabs" id="playerTabs"></div>
-        <div class="animal-grid" id="animalGrid"></div>
-
-        <div class="setup-footer">
-          <span id="selectionStatus">Jugador 1: elige una ficha</span>
-          <button class="primary-button compact" id="startBtn" disabled>
-            Comenzar
-          </button>
-        </div>
-      </section>
-
-      <section class="panel">
-        <div class="panel-heading">
-          <div>
-            <p class="eyebrow">HISTORIAL</p>
-            <h2>Actividad</h2>
-          </div>
-          <span class="log-symbol">⌁</span>
-        </div>
-        <div class="log-list" id="logList">
-          <p class="empty-log">La partida aún no ha comenzado.</p>
-        </div>
-      </section>
+      <section class="panel"><div class="panel-heading"><div><p class="eyebrow">PARTICIPANTES</p><h2>Jugadores</h2></div><span class="small-label">4 JUGADORES</span></div><div class="players-list" id="playersList"></div></section>
+      <section class="panel properties-panel"><div class="panel-heading"><div><p class="eyebrow">TU PATRIMONIO</p><h2>Propiedades</h2></div><span class="small-label" id="propertyCount">0 PROPIEDADES</span></div><p class="setup-description" id="propertyOwnerLabel">Propiedades del jugador actual</p><div id="myPropertiesList" class="my-properties-list"><p class="empty-log">Aún no hay propiedades.</p></div></section>
+      <section class="panel hidden" id="setupPanel"><div class="panel-heading"><div><p class="eyebrow">PERSONALIZA TU PARTIDA</p><h2>Elige tu ficha</h2></div><span class="small-label">ANIMALES</span></div><p class="setup-description">Cada jugador debe escoger un animal diferente.</p><div class="player-tabs" id="playerTabs"></div><div class="animal-grid" id="animalGrid"></div><div class="setup-footer"><span id="selectionStatus">Jugador 1: elige una ficha</span><button class="primary-button compact" id="startBtn" disabled>Comenzar</button></div></section>
+      <section class="panel"><div class="panel-heading"><div><p class="eyebrow">HISTORIAL</p><h2>Actividad</h2></div><span class="log-symbol">⌁</span></div><div class="log-list" id="logList"><p class="empty-log">La partida aún no ha comenzado.</p></div></section>
     </aside>
   </main>
 
-  <div class="modal-backdrop hidden" id="modalBackdrop">
-    <section class="challenge-modal">
-      <button class="modal-close" id="closeModal" aria-label="Cerrar">×</button>
-
-      <div class="modal-top">
-        <span class="category-chip" id="modalCategory">RETO MATEMÁTICO</span>
-        <span class="timer" id="timerBox">
-          <span id="timerText">00:25</span>
-        </span>
-      </div>
-
-      <div class="modal-symbol" id="modalSymbol">∑</div>
-      <p class="eyebrow modal-eyebrow">EL SIGUIENTE PASO DEPENDE DE TI</p>
-      <h2 id="modalTitle">Resuelve el ejercicio</h2>
-      <p class="modal-description" id="modalDescription"></p>
-
-      <div class="question-box" id="questionBox">
-        <span>PROBLEMA MATEMÁTICO</span>
-        <strong id="questionText">2 + 2 = ?</strong>
-      </div>
-
-      <form id="answerForm">
-        <label for="answerInput">Tu respuesta</label>
-        <div class="answer-row">
-          <input id="answerInput" type="text" autocomplete="off" placeholder="Escribe aquí..." required>
-          <button class="primary-button compact" type="submit">Responder</button>
-        </div>
-      </form>
-
-      <p class="feedback" id="modalFeedback"></p>
-      <div class="modal-actions" id="modalActions"></div>
-    </section>
-  </div>
-
+  <div class="modal-backdrop hidden" id="modalBackdrop"><section class="challenge-modal">
+    <button class="modal-close" id="closeModal" aria-label="Cerrar">×</button>
+    <div class="modal-top"><span class="category-chip" id="modalCategory">RETO MATEMÁTICO</span><span class="timer" id="timerBox"><span id="timerText">00:25</span></span></div>
+    <div class="modal-symbol" id="modalSymbol">∑</div><p class="eyebrow modal-eyebrow">EL SIGUIENTE PASO DEPENDE DE TI</p>
+    <h2 id="modalTitle">Resuelve el ejercicio</h2><p class="modal-description" id="modalDescription"></p>
+    <div class="question-box" id="questionBox"><span>PROBLEMA MATEMÁTICO</span><strong id="questionText">2 + 2 = ?</strong></div>
+    <form id="answerForm"><label for="answerInput">Respuesta del jugador</label><div class="answer-row"><input id="answerInput" type="text" autocomplete="off" placeholder="Escribe la respuesta..." required><button class="primary-button compact" type="submit">Comprobar</button></div></form>
+    <p class="feedback" id="modalFeedback"></p><div class="modal-actions" id="modalActions"></div>
+  </section></div>
   <div class="toast" id="toast"></div>
-
   <script type="module" src="script.js"></script>
 </body>
 </html>
