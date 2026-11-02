@@ -5,20 +5,20 @@ const $ = selector => document.querySelector(selector);
 
 const COLORS = {
   green: {
-    name:"FÁCIL", color:"#32965c", time:15,
-    rent:50, price:100, symbol:"+"
+    name: "FÁCIL", color: "#32965c", time: 15,
+    rent: 30, price: 100, symbol: "+"
   },
   blue: {
-    name:"NORMAL", color:"#397fc9", time:25,
-    rent:100, price:200, symbol:"÷"
+    name: "NORMAL", color: "#397fc9", time: 25,
+    rent: 60, price: 200, symbol: "÷"
   },
   purple: {
-    name:"ELEVADA", color:"#9253c5", time:60,
-    rent:175, price:350, symbol:"√"
+    name: "ELEVADA", color: "#9253c5", time: 60,
+    rent: 105, price: 350, symbol: "√"
   },
   red: {
-    name:"MUY DIFÍCIL", color:"#d9434c", time:120,
-    rent:250, price:500, symbol:"∫"
+    name: "MUY DIFÍCIL", color: "#d9434c", time: 120,
+    rent: 150, price: 500, symbol: "∫"
   }
 };
 
@@ -35,29 +35,45 @@ const ANIMALS = [
   {name:"Pez",emoji:"🐟",color:"#35C6C8"}
 ];
 
-/* EJERCICIOS DE PRUEBA */
+/* EJERCICIOS */
 
 const QUESTIONS = {
-  green:[
-    {q:"18 + 27 = ?",a:"45"},
-    {q:"7 × 6 = ?",a:"42"},
-    {q:"64 ÷ 8 = ?",a:"8"},
-    {q:"15 − 9 = ?",a:"6"},
-    {q:"10% de 80 = ?",a:"8"},
-    {q:"9 × 4 = ?",a:"36"},
-    {q:"√81 = ?",a:"9"},
-    {q:"125 − 47 = ?",a:"78"}
+  green: [
+    {q:"18 × 4 = ?",a:"72"},
+    {q:"12 × 7 = ?",a:"84"},
+    {q:"144 ÷ 12 = ?",a:"12"},
+    {q:"96 ÷ 8 = ?",a:"12"},
+    {q:"15% de 200 = ?",a:"30"},
+    {q:"25% de 80 = ?",a:"20"},
+    {q:"30% de 150 = ?",a:"45"},
+    {q:"9 × 13 = ?",a:"117"},
+    {q:"180 ÷ 9 = ?",a:"20"},
+    {q:"20% de 350 = ?",a:"70"},
+    {q:"14 × 5 = ?",a:"70"},
+    {q:"120 ÷ 6 = ?",a:"20"},
+    {q:"10% de 350 = ?",a:"35"},
+    {q:"16 × 4 = ?",a:"64"},
+    {q:"84 ÷ 7 = ?",a:"12"}
   ],
-  blue:[
-    {q:"3x + 5 = 20. ¿x = ?",a:"5"},
-    {q:"12² = ?",a:"144"},
-    {q:"¾ de 80 = ?",a:"60"},
-    {q:"2x − 7 = 13. ¿x = ?",a:"10"},
-    {q:"√169 = ?",a:"13"},
-    {q:"25% de 240 = ?",a:"60"},
-    {q:"5x = 65. ¿x = ?",a:"13"}
+
+  blue: [
+    {q:"5! = ?",a:"120"},
+    {q:"4! = ?",a:"24"},
+    {q:"6! = ?",a:"720"},
+    {q:"√144 = ?",a:"12"},
+    {q:"√225 = ?",a:"15"},
+    {q:"√324 = ?",a:"18"},
+    {q:"125 × 24 = ?",a:"3000"},
+    {q:"36 × 48 = ?",a:"1728"},
+    {q:"125 × 16 = ?",a:"2000"},
+    {q:"1/2 + 1/4 = ?",a:"3/4"},
+    {q:"3/4 + 1/2 = ?",a:"5/4"},
+    {q:"2/3 de 90 = ?",a:"60"},
+    {q:"5/8 de 80 = ?",a:"50"},
+    {q:"7! = ?",a:"5040"}
   ],
-  purple:[
+
+  purple: [
     {q:"2x² = 50. ¿x positivo = ?",a:"5"},
     {q:"Si f(x) = 3x − 2, f(7) = ?",a:"19"},
     {q:"√196 + 3² = ?",a:"23"},
@@ -65,7 +81,8 @@ const QUESTIONS = {
     {q:"Factoriza x² − 9. Primer factor:",a:"x-3"},
     {q:"3² + 4² = ?",a:"25"}
   ],
-  red:[
+
+  red: [
     {q:"x² − 5x + 6 = 0. Raíz mayor:",a:"3"},
     {q:"2ˣ = 32. ¿x = ?",a:"5"},
     {q:"Derivada de x³:",a:"3x^2"},
@@ -99,13 +116,13 @@ const SURPRISE_CARDS = [
   },
   {
     title:"Premio matemático",
-    description:"Tu esfuerzo tiene recompensa. Recibes $150.",
-    effect:"money",value:150
+    description:"Tu esfuerzo tiene recompensa. Recibes $100.",
+    effect:"money",value:100
   },
   {
     title:"Beca académica",
-    description:"Has conseguido una beca de $200.",
-    effect:"money",value:200
+    description:"Has conseguido una beca de $100.",
+    effect:"money",value:100
   },
   {
     title:"Inversión exitosa",
@@ -134,7 +151,7 @@ const SURPRISE_CARDS = [
   },
   {
     title:"Impulso económico",
-    description:"Recibes $50 por cada propiedad que tengas.",
+    description:"Recibes $50 por cada propiedad que tengas, hasta un máximo de $200.",
     effect:"perProperty",value:50
   },
   {
@@ -154,18 +171,18 @@ const SURPRISE_CARDS = [
   },
   {
     title:"Reparaciones",
-    description:"Paga $50 por cada propiedad que tengas.",
+    description:"Paga $50 por cada propiedad que tengas, hasta un máximo de $200.",
     effect:"propertyLoss",value:50
   },
   {
-    title:"Error de cálculo",
-    description:"Una equivocación te cuesta $100.",
-    effect:"loss",value:100
+    title:"Detención inesperada",
+    description:"La policía te ha detenido. Ve directamente a la cárcel y resuelve un ejercicio para salir.",
+    effect:"goToJail"
   },
   {
     title:"Impuestos",
-    description:"Debes pagar $150 en impuestos.",
-    effect:"loss",value:150
+    description:"Debes pagar $100 en impuestos.",
+    effect:"loss",value:100
   },
   {
     title:"Retroceso",
@@ -191,37 +208,38 @@ const SURPRISE_CARDS = [
 
 /* VARIABLES DE LA PARTIDA */
 
-let spaces=[];
-let players=[];
-let currentPlayer=0;
-let round=1;
-let started=false;
-let selectedSetupPlayer=0;
-let challenge=null;
-let timerInterval=null;
-let toastTimeout=null;
-let isMoving=false;
-let surpriseDeck=[];
+let spaces = [];
+let players = [];
+let currentPlayer = 0;
+let round = 1;
+let started = false;
+let gameOver = false;
+let selectedSetupPlayer = 0;
+let challenge = null;
+let timerInterval = null;
+let toastTimeout = null;
+let isMoving = false;
+let surpriseDeck = [];
 
 /* FUNCIONES GENERALES */
 
-function shuffleArray(array){
-  const result=[...array];
+function shuffleArray(array) {
+  const result = [...array];
 
-  for(let i=result.length-1;i>0;i--){
-    const j=Math.floor(Math.random()*(i+1));
-    [result[i],result[j]]=[result[j],result[i]];
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [result[i], result[j]] = [result[j], result[i]];
   }
 
   return result;
 }
 
-function shuffleSurpriseDeck(){
-  surpriseDeck=shuffleArray(SURPRISE_CARDS);
+function shuffleSurpriseDeck() {
+  surpriseDeck = shuffleArray(SURPRISE_CARDS);
 }
 
-function drawSurpriseCard(){
-  if(surpriseDeck.length===0){
+function drawSurpriseCard() {
+  if (surpriseDeck.length === 0) {
     shuffleSurpriseDeck();
     addLog("El mazo sorpresa se ha mezclado nuevamente.");
   }
@@ -229,123 +247,213 @@ function drawSurpriseCard(){
   return surpriseDeck.pop();
 }
 
-function chargePlayer(player,amount){
-  const paid=Math.min(player.money,Math.max(0,amount));
-  player.money-=paid;
-  return paid;
+function randomQuestion(difficulty) {
+  const list = QUESTIONS[difficulty];
+  return list[Math.floor(Math.random() * list.length)];
 }
 
-function randomQuestion(difficulty){
-  const list=QUESTIONS[difficulty];
-  return list[Math.floor(Math.random()*list.length)];
+function randomPrisonQuestion() {
+  const difficulty = Math.random() < 0.5 ? "green" : "blue";
+
+  return {
+    difficulty,
+    question: randomQuestion(difficulty)
+  };
 }
 
-function formatTime(seconds){
-  const minutes=Math.floor(seconds/60);
-  const remaining=seconds%60;
+function formatTime(seconds) {
+  const minutes = Math.floor(seconds / 60);
+  const remaining = seconds % 60;
 
   return `${String(minutes).padStart(2,"0")}:${String(remaining).padStart(2,"0")}`;
 }
 
-function normalizeAnswer(value){
+function normalizeAnswer(value) {
   return value.trim().toLowerCase()
     .replace(/\s+/g,"")
     .replace(/−/g,"-")
     .replace(/²/g,"^2");
 }
 
+/* ELIMINACIÓN Y VICTORIA */
+
+function eliminatePlayer(player) {
+  if (!player || player.eliminated) return;
+
+  player.money = 0;
+  player.eliminated = true;
+  player.inJail = false;
+  player.skipNext = false;
+
+  const playerIndex = players.indexOf(player);
+
+  spaces.forEach(space => {
+    if (space.owner === playerIndex) {
+      space.owner = null;
+    }
+  });
+
+  addLog(
+    `${player.name} no pudo pagar una obligación y queda eliminado. Sus propiedades regresan al banco.`
+  );
+
+  renderTokens();
+  renderPlayers();
+  checkWinner();
+}
+
+function checkWinner() {
+  if (!started || gameOver) return;
+
+  const remaining = players.filter(player => !player.eliminated);
+
+  if (remaining.length <= 1) {
+    gameOver = true;
+
+    const winner = remaining[0];
+
+    $("#rollBtn").disabled = true;
+    $("#rollHelp").textContent = winner
+      ? `${winner.name} es el ganador de la partida.`
+      : "La partida ha terminado.";
+
+    $("#centerStatus").textContent = winner
+      ? `GANADOR: ${winner.name.toUpperCase()}`
+      : "PARTIDA FINALIZADA";
+
+    $("#turnLabel").textContent = "PARTIDA TERMINADA";
+
+    if (winner) {
+      addLog(`¡${winner.name} ha ganado la partida!`);
+      showToast(`¡${winner.name} es el ganador!`);
+    }
+
+    renderPlayers();
+    renderTokens();
+  }
+}
+
+/* COBROS Y DEUDAS */
+
+function chargePlayer(player, amount) {
+  if (!player || player.eliminated) return 0;
+
+  amount = Math.max(0, amount);
+
+  if (player.money >= amount) {
+    player.money -= amount;
+    return amount;
+  }
+
+  const paid = player.money;
+  player.money = 0;
+
+  return paid;
+}
+
+function settleDebt(player, amount) {
+  const hadEnoughMoney = player.money >= amount;
+  const paid = chargePlayer(player, amount);
+
+  if (!hadEnoughMoney) {
+    eliminatePlayer(player);
+  }
+
+  return paid;
+}
+
 /* CREAR TABLERO */
 
-function createSpaces(){
-  const coordinates=[];
+function createSpaces() {
+  const coordinates = [];
 
-  /* Se conserva la distribución original. */
-  for(let col=1;col<=11;col++) coordinates.push([1,col]);
-  for(let row=2;row<=11;row++) coordinates.push([row,11]);
-  for(let col=10;col>=1;col--) coordinates.push([11,col]);
-  for(let row=10;row>=2;row--) coordinates.push([row,1]);
+  for (let col = 1; col <= 11; col++) coordinates.push([1,col]);
+  for (let row = 2; row <= 11; row++) coordinates.push([row,11]);
+  for (let col = 10; col >= 1; col--) coordinates.push([11,col]);
+  for (let row = 10; row >= 2; row--) coordinates.push([row,1]);
 
-  /* Cinco casillas sorpresa. */
-  const surprises=new Set([4,14,24,34,37]);
+  const surprises = new Set([4,14,24,34,37]);
 
-  const shuffled=shuffleArray(propertyTypes);
-  let propertyIndex=0;
+  const shuffled = shuffleArray(propertyTypes);
+  let propertyIndex = 0;
 
-  spaces=coordinates.map(([row,col],index)=>{
-    const base={
+  spaces = coordinates.map(([row,col],index) => {
+    const base = {
       index,row,col,owner:null,
       type:"property",difficulty:null,
       symbol:"",price:0
     };
 
-    /* Inicio: casilla 0. */
-    if(index===0){
+    if (index === 0) {
       return {...base,type:"start",symbol:"⌂"};
     }
 
-    /* Cárcel: casilla 10. */
-    if(index===10){
+    if (index === 10) {
       return {...base,type:"prison",symbol:"▤"};
     }
 
-    /* Policía: casilla 30. */
-    if(index===30){
+    if (index === 30) {
       return {...base,type:"police",symbol:"♜"};
     }
 
-    if(surprises.has(index)){
+    if (surprises.has(index)) {
       return {...base,type:"surprise",symbol:"✧"};
     }
 
-    const difficulty=shuffled[propertyIndex++];
+    const difficulty = shuffled[propertyIndex++];
 
     return {
       ...base,
       difficulty,
-      symbol:COLORS[difficulty].symbol,
-      price:COLORS[difficulty].price
+      symbol: COLORS[difficulty].symbol,
+      price: COLORS[difficulty].price
     };
   });
 }
 
-function renderBoard(){
-  const board=$("#board");
-  board.querySelectorAll(".space").forEach(el=>el.remove());
+function renderBoard() {
+  const board = $("#board");
+  board.querySelectorAll(".space").forEach(el => el.remove());
 
-  spaces.forEach(space=>{
-    const cell=document.createElement("div");
-    cell.className=`space ${space.type} ${space.difficulty||""}`;
-    cell.style.gridRow=space.row;
-    cell.style.gridColumn=space.col;
-    cell.dataset.index=space.index;
+  spaces.forEach(space => {
+    const cell = document.createElement("div");
+    cell.className = `space ${space.type} ${space.difficulty || ""}`;
+    cell.style.gridRow = space.row;
+    cell.style.gridColumn = space.col;
+    cell.dataset.index = space.index;
 
-    const band=document.createElement("span");
-    band.className="space-band";
-    band.style.background=space.difficulty
-      ?COLORS[space.difficulty].color
-      :space.type==="surprise"?"#a77bd1":"#a88d5c";
+    const band = document.createElement("span");
+    band.className = "space-band";
+    band.style.background = space.difficulty
+      ? COLORS[space.difficulty].color
+      : space.type === "surprise" ? "#a77bd1" : "#a88d5c";
 
-    const symbol=document.createElement("span");
-    symbol.className="space-symbol";
-    symbol.textContent=space.symbol;
+    const symbol = document.createElement("span");
+    symbol.className = "space-symbol";
+    symbol.textContent = space.symbol;
 
-    const tokens=document.createElement("span");
-    tokens.className="tokens";
-    tokens.dataset.tokens=space.index;
+    const tokens = document.createElement("span");
+    tokens.className = "tokens";
+    tokens.dataset.tokens = space.index;
 
     cell.append(band,symbol,tokens);
 
-    if(space.type==="property"){
-      const price=document.createElement("span");
-      price.className="space-price";
-      price.textContent=`$${space.price}`;
-      cell.append(price);
+    const meta = document.createElement("div");
+    meta.className = "space-meta";
+
+    if (space.type === "property") {
+      const price = document.createElement("span");
+      price.className = "space-price";
+      price.textContent = `$${space.price}`;
+      meta.append(price);
     }
 
-    const number=document.createElement("span");
-    number.className="space-index";
-    number.textContent=String(space.index);
-    cell.append(number);
+    const number = document.createElement("span");
+    number.className = "space-index";
+    number.textContent = String(space.index);
+
+    meta.append(number);
+    cell.append(meta);
 
     board.append(cell);
   });
@@ -355,84 +463,85 @@ function renderBoard(){
 
 /* CREAR JUGADORES */
 
-function createPlayers(){
-  players=Array.from({length:4},(_,index)=>({
-    name:`Jugador ${index+1}`,
-    animal:null,
-    money:800,
-    position:0,
-    skipNext:false,
-    inJail:false,
-    mistakeShield:false,
-    rentShield:false,
-    startBonus:0,
-    extraTime:0,
-    discountTarget:null
+function createPlayers() {
+  players = Array.from({length:4},(_,index) => ({
+    name: `Jugador ${index+1}`,
+    animal: null,
+    money: 1000,
+    position: 0,
+    skipNext: false,
+    inJail: false,
+    eliminated: false,
+    mistakeShield: false,
+    rentShield: false,
+    startBonus: 0,
+    extraTime: 0,
+    discountTarget: null
   }));
 }
 
 /* SELECCIÓN DE ANIMALES */
 
-function renderSetup(){
-  const tabs=$("#playerTabs");
-  const grid=$("#animalGrid");
+function renderSetup() {
+  const tabs = $("#playerTabs");
+  const grid = $("#animalGrid");
 
-  tabs.innerHTML="";
-  grid.innerHTML="";
+  tabs.innerHTML = "";
+  grid.innerHTML = "";
 
-  players.forEach((player,index)=>{
-    const tab=document.createElement("button");
-    tab.className="player-tab";
-    tab.textContent=`Jugador ${index+1}`;
+  players.forEach((player,index) => {
+    const tab = document.createElement("button");
+    tab.className = "player-tab";
+    tab.textContent = `Jugador ${index+1}`;
 
-    if(selectedSetupPlayer===index) tab.classList.add("active");
-    if(player.animal) tab.classList.add("done");
+    if (selectedSetupPlayer === index) tab.classList.add("active");
+    if (player.animal) tab.classList.add("done");
 
-    tab.addEventListener("click",()=>{
-      selectedSetupPlayer=index;
+    tab.addEventListener("click",() => {
+      selectedSetupPlayer = index;
       renderSetup();
     });
 
     tabs.append(tab);
   });
 
-  ANIMALS.forEach(animal=>{
-    const taken=players.some((player,index)=>
-      index!==selectedSetupPlayer &&
-      player.animal?.name===animal.name
+  ANIMALS.forEach(animal => {
+    const taken = players.some((player,index) =>
+      index !== selectedSetupPlayer &&
+      player.animal?.name === animal.name
     );
 
-    const button=document.createElement("button");
-    button.className="animal-option";
+    const button = document.createElement("button");
+    button.className = "animal-option";
     button.style.setProperty("--animal-color",animal.color);
 
-    if(players[selectedSetupPlayer].animal?.name===animal.name){
+    if (players[selectedSetupPlayer].animal?.name === animal.name) {
       button.classList.add("selected");
     }
 
-    if(taken){
+    if (taken) {
       button.classList.add("taken");
-      button.disabled=true;
+      button.disabled = true;
     }
 
-    const emoji=document.createElement("span");
-    emoji.className="animal-emoji";
-    emoji.textContent=animal.emoji;
+    const emoji = document.createElement("span");
+    emoji.className = "animal-emoji";
+    emoji.textContent = animal.emoji;
 
-    const labelRow=document.createElement("span");
-    labelRow.className="animal-label-row";
+    const labelRow = document.createElement("span");
+    labelRow.className = "animal-label-row";
 
-    const dot=document.createElement("span");
-    dot.className="animal-color-dot";
+    const dot = document.createElement("span");
+    dot.className = "animal-color-dot";
 
-    const label=document.createElement("span");
-    label.textContent=animal.name;
+    const label = document.createElement("span");
+    label.textContent = animal.name;
 
     labelRow.append(dot,label);
     button.append(emoji,labelRow);
 
-    button.addEventListener("click",()=>{
-      players[selectedSetupPlayer].animal=animal;
+    button.addEventListener("click",() => {
+      players[selectedSetupPlayer].animal = animal;
       renderSetup();
       renderPlayers();
     });
@@ -440,63 +549,69 @@ function renderSetup(){
     grid.append(button);
   });
 
-  const selected=players[selectedSetupPlayer];
+  const selected = players[selectedSetupPlayer];
 
-  $("#selectionStatus").textContent=selected.animal
-    ?`Jugador ${selectedSetupPlayer+1}: ${selected.animal.name}`
-    :`Jugador ${selectedSetupPlayer+1}: elige una ficha`;
+  $("#selectionStatus").textContent = selected.animal
+    ? `Jugador ${selectedSetupPlayer+1}: ${selected.animal.name}`
+    : `Jugador ${selectedSetupPlayer+1}: elige una ficha`;
 
-  $("#startBtn").disabled=!players.every(player=>player.animal);
+  $("#startBtn").disabled = !players.every(player => player.animal);
 }
 
 /* JUGADORES Y PROPIEDADES */
 
-function renderPlayers(){
-  const list=$("#playersList");
-  list.innerHTML="";
+function renderPlayers() {
+  const list = $("#playersList");
+  list.innerHTML = "";
 
-  players.forEach((player,index)=>{
-    const row=document.createElement("div");
-    row.className="player-row";
+  players.forEach((player,index) => {
+    const row = document.createElement("div");
+    row.className = "player-row";
 
-    if(started&&index===currentPlayer){
+    if (started && index === currentPlayer && !player.eliminated) {
       row.classList.add("active");
     }
 
-    const avatar=document.createElement("div");
-    avatar.className="player-avatar";
-    avatar.textContent=player.animal?.emoji||"?";
+    if (player.eliminated) {
+      row.classList.add("eliminated");
+    }
+
+    const avatar = document.createElement("div");
+    avatar.className = "player-avatar";
+    avatar.textContent = player.animal?.emoji || "?";
     avatar.style.setProperty(
       "--player-color",
-      player.animal?.color||"#363841"
+      player.animal?.color || "#363841"
     );
 
-    const details=document.createElement("div");
+    const details = document.createElement("div");
 
-    const name=document.createElement("div");
-    name.className="player-name";
-    name.textContent=player.name;
+    const name = document.createElement("div");
+    name.className = "player-name";
+    name.textContent = player.name;
 
-    if(started&&index===currentPlayer){
-      const chip=document.createElement("span");
-      chip.className="turn-chip";
-      chip.textContent="TURNO";
+    if (started && index === currentPlayer && !player.eliminated) {
+      const chip = document.createElement("span");
+      chip.className = "turn-chip";
+      chip.textContent = "TURNO";
       name.append(chip);
     }
 
-    const subtitle=document.createElement("div");
-    subtitle.className="player-sub";
-    subtitle.textContent=
-      `${player.animal?.name||"Sin ficha"} · Casilla ${player.position}`;
+    const subtitle = document.createElement("div");
+    subtitle.className = "player-sub";
+
+    subtitle.textContent = player.eliminated
+      ? "ELIMINADO"
+      : `${player.animal?.name || "Sin ficha"} · Casilla ${player.position}`;
 
     details.append(name,subtitle);
 
-    const money=document.createElement("div");
-    money.className="player-money";
-    money.textContent=`$${player.money}`;
+    const money = document.createElement("div");
+    money.className = "player-money";
+    money.textContent = `$${player.money}`;
 
-    const small=document.createElement("small");
-    small.textContent="SALDO";
+    const small = document.createElement("small");
+    small.textContent = player.eliminated ? "ELIMINADO" : "SALDO";
     money.append(small);
 
     row.append(avatar,details,money);
@@ -506,101 +621,101 @@ function renderPlayers(){
   renderMyProperties();
 }
 
-function renderMyProperties(){
-  const list=$("#myPropertiesList");
-  const label=$("#propertyOwnerLabel");
-  const count=$("#propertyCount");
+function renderMyProperties() {
+  const list = $("#myPropertiesList");
+  const label = $("#propertyOwnerLabel");
+  const count = $("#propertyCount");
 
-  if(!list||!label||!count) return;
+  if (!list || !label || !count) return;
 
-  const player=players[currentPlayer];
+  const player = players[currentPlayer];
 
-  if(!player){
-    list.innerHTML='<p class="property-empty">Aún no hay jugadores.</p>';
+  if (!player) {
+    list.innerHTML = '<p class="property-empty">Aún no hay jugadores.</p>';
     return;
   }
 
-  const owned=spaces.filter(space=>space.owner===currentPlayer);
+  const owned = spaces.filter(space => space.owner === currentPlayer);
 
-  label.textContent=`Propiedades de ${player.name}`;
-  count.textContent=`${owned.length} PROPIEDAD${owned.length===1?"":"ES"}`;
+  label.textContent = `Propiedades de ${player.name}`;
+  count.textContent = `${owned.length} PROPIEDAD${owned.length===1?"":"ES"}`;
 
-  list.innerHTML="";
+  list.innerHTML = "";
 
-  if(owned.length===0){
-    list.innerHTML='<p class="property-empty">Aún no tienes propiedades.</p>';
+  if (owned.length === 0) {
+    list.innerHTML = '<p class="property-empty">Aún no tienes propiedades.</p>';
     return;
   }
 
-  owned.forEach(space=>{
-    const type=COLORS[space.difficulty];
+  owned.forEach(space => {
+    const type = COLORS[space.difficulty];
 
-    const card=document.createElement("div");
-    card.className="property-card";
+    const card = document.createElement("div");
+    card.className = "property-card";
 
-    const symbol=document.createElement("div");
-    symbol.className="property-card-symbol";
+    const symbol = document.createElement("div");
+    symbol.className = "property-card-symbol";
     symbol.style.setProperty("--property-color",type.color);
-    symbol.textContent=space.symbol;
+    symbol.textContent = space.symbol;
 
-    const info=document.createElement("div");
-    info.className="property-card-info";
+    const info = document.createElement("div");
 
-    const title=document.createElement("strong");
-    title.textContent=`Casilla ${space.index}`;
+    const title = document.createElement("strong");
+    title.textContent = `Casilla ${space.index}`;
 
-    const details=document.createElement("small");
-    details.textContent=
-      `${type.name} · Alquiler $${type.rent}`;
+    const details = document.createElement("small");
+    details.textContent = `${type.name} · Alquiler $${type.rent}`;
 
     info.append(title,details);
 
-    const price=document.createElement("div");
-    price.className="property-card-price";
-    price.textContent=`$${space.price}`;
+    const price = document.createElement("div");
+    price.className = "property-card-price";
+    price.textContent = `$${space.price}`;
 
     card.append(symbol,info,price);
     list.append(card);
   });
 }
 
-function renderTokens(){
-  document.querySelectorAll(".tokens").forEach(el=>{
-    el.innerHTML="";
+function renderTokens() {
+  document.querySelectorAll(".tokens").forEach(el => {
+    el.innerHTML = "";
   });
 
-  players.forEach(player=>{
-    const holder=document.querySelector(
+  players.forEach(player => {
+    if (player.eliminated) return;
+
+    const holder = document.querySelector(
       `.tokens[data-tokens="${player.position}"]`
     );
 
-    if(!holder||!player.animal) return;
+    if (!holder || !player.animal) return;
 
-    const token=document.createElement("span");
-    token.className="token-mini";
-    token.textContent=player.animal.emoji;
-    token.title=player.name;
+    const token = document.createElement("span");
+    token.className = "token-mini";
+    token.textContent = player.animal.emoji;
+    token.title = player.name;
 
-    token.style.color=player.animal.color;
-    token.style.textShadow=`0 0 8px ${player.animal.color}`;
+    token.style.color = player.animal.color;
+    token.style.textShadow = `0 0 8px ${player.animal.color}`;
 
     holder.append(token);
   });
 
-  spaces.forEach(space=>{
-    const cell=document.querySelector(
+  spaces.forEach(space => {
+    const cell = document.querySelector(
       `.space[data-index="${space.index}"]`
     );
 
-    if(!cell) return;
+    if (!cell) return;
 
     cell.querySelector(".owner-mark")?.remove();
 
-    if(space.owner!==null){
-      const mark=document.createElement("span");
-      mark.className="owner-mark";
-      mark.title=`Propiedad de ${players[space.owner].name}`;
-      mark.style.background=players[space.owner].animal.color;
+    if (space.owner !== null) {
+      const mark = document.createElement("span");
+      mark.className = "owner-mark";
+      mark.title = `Propiedad de ${players[space.owner].name}`;
+      mark.style.background = players[space.owner].animal.color;
       cell.append(mark);
     }
   });
@@ -608,53 +723,54 @@ function renderTokens(){
 
 /* HISTORIAL Y AVISOS */
 
-function addLog(message){
-  const list=$("#logList");
+function addLog(message) {
+  const list = $("#logList");
   list.querySelector(".empty-log")?.remove();
 
-  const entry=document.createElement("div");
-  entry.className="log-entry";
+  const entry = document.createElement("div");
+  entry.className = "log-entry";
 
-  const dot=document.createElement("span");
-  dot.className="log-dot";
+  const dot = document.createElement("span");
+  dot.className = "log-dot";
 
-  const text=document.createElement("span");
-  text.textContent=message;
+  const text = document.createElement("span");
+  text.textContent = message;
 
   entry.append(dot,text);
   list.prepend(entry);
 
-  while(list.children.length>6){
+  while (list.children.length > 6) {
     list.lastElementChild.remove();
   }
 }
 
-function showToast(message){
-  const toast=$("#toast");
-  toast.textContent=message;
+function showToast(message) {
+  const toast = $("#toast");
+  toast.textContent = message;
   toast.classList.add("show");
 
   clearTimeout(toastTimeout);
 
-  toastTimeout=setTimeout(()=>{
+  toastTimeout = setTimeout(() => {
     toast.classList.remove("show");
   },2300);
 }
 
 /* INICIAR PARTIDA */
 
-function startGame(){
-  if(!players.every(player=>player.animal)) return;
+function startGame() {
+  if (!players.every(player => player.animal)) return;
 
-  started=true;
+  started = true;
+  gameOver = false;
   shuffleSurpriseDeck();
 
   $("#setupPanel").classList.add("hidden");
-  $("#rollBtn").disabled=false;
-  $("#rollHelp").textContent="Lanza los dados para avanzar.";
-  $("#centerStatus").textContent="LA PARTIDA ESTÁ EN CURSO";
+  $("#rollBtn").disabled = false;
+  $("#rollHelp").textContent = "Lanza los dados para avanzar.";
+  $("#centerStatus").textContent = "LA PARTIDA ESTÁ EN CURSO";
 
-  addLog("La partida ha comenzado. Todos reciben $800.");
+  addLog("La partida ha comenzado. Todos reciben $1.000.");
 
   updateTurnLabel();
   renderPlayers();
@@ -663,14 +779,19 @@ function startGame(){
 
 /* DADOS Y MOVIMIENTO */
 
-function rollDice(){
-  if(!started||challenge||isMoving) return;
+function rollDice() {
+  if (!started || gameOver || challenge || isMoving) return;
 
-  const player=players[currentPlayer];
+  const player = players[currentPlayer];
 
-  if(player.skipNext){
-    player.skipNext=false;
-    player.inJail=false;
+  if (player.eliminated) {
+    nextTurn();
+    return;
+  }
+
+  if (player.skipNext) {
+    player.skipNext = false;
+    player.inJail = false;
 
     addLog(`${player.name} pierde este turno por estar detenido.`);
     showToast(`${player.name} pierde su turno.`);
@@ -679,101 +800,109 @@ function rollDice(){
     return;
   }
 
-  const d1=1+Math.floor(Math.random()*6);
-  const d2=1+Math.floor(Math.random()*6);
-  const total=d1+d2;
+  const d1 = 1 + Math.floor(Math.random()*6);
+  const d2 = 1 + Math.floor(Math.random()*6);
+  const total = d1+d2;
 
-  $("#rollBtn").disabled=true;
+  $("#rollBtn").disabled = true;
   $("#dieOne").classList.add("rolling");
   $("#dieTwo").classList.add("rolling");
-  $("#diceMessage").textContent="Los dados están rodando...";
+  $("#diceMessage").textContent = "Los dados están rodando...";
 
-  setTimeout(()=>{
+  setTimeout(() => {
     $("#dieOne").classList.remove("rolling");
     $("#dieTwo").classList.remove("rolling");
 
-    $("#dieOne").dataset.value=d1;
-    $("#dieTwo").dataset.value=d2;
+    $("#dieOne").dataset.value = d1;
+    $("#dieTwo").dataset.value = d2;
 
-    $("#diceMessage").textContent=`${d1} + ${d2} casillas`;
-    $("#diceTotal").textContent=total;
+    $("#diceMessage").textContent = `${d1} + ${d2} casillas`;
+    $("#diceTotal").textContent = total;
 
     movePlayer(total);
   },650);
 }
 
-async function movePlayer(steps){
-  if(isMoving) return;
+async function movePlayer(steps) {
+  if (isMoving || gameOver) return;
 
-  isMoving=true;
+  isMoving = true;
 
-  const player=players[currentPlayer];
-  const direction=steps>=0?1:-1;
-  const count=Math.abs(steps);
+  const player = players[currentPlayer];
 
-  let passedStart=false;
+  if (!player || player.eliminated) {
+    isMoving = false;
+    nextTurn();
+    return;
+  }
 
-  for(let step=0;step<count;step++){
-    const next=(player.position+direction+40)%40;
+  const direction = steps >= 0 ? 1 : -1;
+  const count = Math.abs(steps);
 
-    if(direction===1&&next===0){
-      passedStart=true;
+  let passedStart = false;
+
+  for (let step = 0; step < count; step++) {
+    const next = (player.position+direction+40)%40;
+
+    if (direction === 1 && next === 0) {
+      passedStart = true;
     }
 
-    player.position=next;
+    player.position = next;
 
     renderTokens();
     renderPlayers();
 
-    const cell=document.querySelector(
+    const cell = document.querySelector(
       `.space[data-index="${next}"]`
     );
 
     cell?.classList.add("moving-to");
 
-    await new Promise(resolve=>setTimeout(resolve,280));
+    await new Promise(resolve => setTimeout(resolve,280));
 
     cell?.classList.remove("moving-to");
   }
 
-  if(passedStart){
-    const bonus=200+player.startBonus;
-    player.money+=bonus;
+  if (passedStart) {
+    const bonus = 200 + player.startBonus;
+    player.money += bonus;
 
-    addLog(
-      `${player.name} pasó por Inicio y recibió $${bonus}.`
-    );
+    addLog(`${player.name} pasó por Inicio y recibió $${bonus}.`);
 
-    player.startBonus=0;
+    player.startBonus = 0;
   }
 
-  isMoving=false;
+  isMoving = false;
 
-  const space=spaces[player.position];
+  const space = spaces[player.position];
 
   addLog(`${player.name} llegó a la casilla ${space.index}.`);
 
   renderPlayers();
   renderTokens();
 
-  if(space.type==="property"){
+  if (space.type === "property") {
     landOnProperty(space,player);
-  }else if(space.type==="police"){
-    player.position=10;
-    player.inJail=true;
 
-    addLog(`${player.name} fue enviado a la cárcel.`);
+  } else if (space.type === "police") {
+    sendPlayerToJail(player,"police");
 
-    renderPlayers();
-    renderTokens();
+  } else if (space.type === "prison") {
+    // IMPORTANTE:
+    // Caer en la casilla 10 no significa estar encarcelado.
+    // El jugador solamente está de visita.
+    player.inJail = false;
 
-    openPrison(true);
-  }else if(space.type==="prison"){
-    player.inJail=true;
-    openPrison(false);
-  }else if(space.type==="surprise"){
+    addLog(`${player.name} está de visita en la cárcel.`);
+    showToast("Estás de visita. Tu turno continúa normalmente.");
+
+    nextTurn();
+
+  } else if (space.type === "surprise") {
     openSurprise();
-  }else{
+
+  } else {
     showToast("Has llegado a Inicio.");
     nextTurn();
   }
@@ -781,147 +910,182 @@ async function movePlayer(steps){
 
 /* TURNOS */
 
-function updateTurnLabel(){
-  $("#turnLabel").textContent=started
-    ?`TURNO DE ${players[currentPlayer].name.toUpperCase()}`
-    :"PREPARANDO PARTIDA";
-}
-
-function nextTurn(){
-  currentPlayer=(currentPlayer+1)%players.length;
-
-  if(currentPlayer===0){
-    round++;
+function updateTurnLabel() {
+  if (gameOver) {
+    $("#turnLabel").textContent = "PARTIDA TERMINADA";
+    return;
   }
 
-  $("#roundNumber").textContent=String(round).padStart(2,"0");
-  $("#roundNumberMobile").textContent=String(round).padStart(2,"0");
+  $("#turnLabel").textContent = started
+    ? `TURNO DE ${players[currentPlayer].name.toUpperCase()}`
+    : "PREPARANDO PARTIDA";
+}
+
+function nextTurn() {
+  if (!started || gameOver) return;
+
+  const previousPlayer = currentPlayer;
+  let found = false;
+
+  for (let i = 1; i <= players.length; i++) {
+    const candidate = (previousPlayer+i)%players.length;
+
+    if (!players[candidate].eliminated) {
+      if (candidate <= previousPlayer) {
+        round++;
+      }
+
+      currentPlayer = candidate;
+      found = true;
+      break;
+    }
+  }
+
+  if (!found) {
+    checkWinner();
+    return;
+  }
+
+  $("#roundNumber").textContent = String(round).padStart(2,"0");
+  $("#roundNumberMobile").textContent = String(round).padStart(2,"0");
 
   updateTurnLabel();
   renderPlayers();
   renderTokens();
 
-  $("#rollBtn").disabled=!started;
-  $("#rollHelp").textContent="Lanza los dados para avanzar.";
+  $("#rollBtn").disabled = gameOver;
+  $("#rollHelp").textContent = gameOver
+    ? "La partida ha terminado."
+    : "Lanza los dados para avanzar.";
 }
 
 /* SISTEMA DE EJERCICIOS */
 
-function openChallenge(options){
+function openChallenge(options) {
   clearInterval(timerInterval);
 
-  challenge={...options,answered:false};
+  challenge = {...options,answered:false};
 
-  const player=players[currentPlayer];
+  const player = players[currentPlayer];
 
-  let timeLeft=options.time+(player.extraTime||0);
+  let timeLeft = options.time+(player.extraTime||0);
+  player.extraTime = 0;
 
-  player.extraTime=0;
+  $("#modalCategory").textContent = options.category;
+  $("#modalTitle").textContent = options.title;
+  $("#modalDescription").textContent = options.description;
+  $("#modalSymbol").textContent = options.symbol||"∑";
+  $("#questionText").textContent = options.question.q;
+  $("#timerText").textContent = formatTime(timeLeft);
+  $("#modalFeedback").textContent = "";
+  $("#modalFeedback").className = "feedback";
 
-  $("#modalCategory").textContent=options.category;
-  $("#modalTitle").textContent=options.title;
-  $("#modalDescription").textContent=options.description;
-  $("#modalSymbol").textContent=options.symbol||"∑";
-  $("#questionText").textContent=options.question.q;
-  $("#timerText").textContent=formatTime(timeLeft);
-  $("#modalFeedback").textContent="";
-  $("#modalFeedback").className="feedback";
-  $("#modalActions").innerHTML="";
-
+  $("#modalActions").innerHTML = "";
   $("#timerBox").classList.remove("hidden");
   $("#questionBox").classList.remove("hidden");
   $("#answerForm").classList.remove("hidden");
 
-  $("#answerInput").value="";
-  $("#answerInput").disabled=false;
+  $("#answerInput").value = "";
+  $("#answerInput").disabled = false;
 
   $("#modalBackdrop").classList.remove("hidden");
-  $("#rollBtn").disabled=true;
+  $("#rollBtn").disabled = true;
 
-  timerInterval=setInterval(()=>{
-    if(!challenge||challenge.answered) return;
+  timerInterval = setInterval(() => {
+    if (!challenge || challenge.answered) return;
 
     timeLeft--;
 
-    $("#timerText").textContent=formatTime(Math.max(0,timeLeft));
+    $("#timerText").textContent = formatTime(Math.max(0,timeLeft));
 
-    if(timeLeft<=0){
+    if (timeLeft <= 0) {
       clearInterval(timerInterval);
       resolveAnswer(false,true);
     }
   },1000);
 
-  setTimeout(()=>$("#answerInput").focus(),100);
+  setTimeout(() => $("#answerInput").focus(),100);
 }
 
-function submitAnswer(event){
+function submitAnswer(event) {
   event.preventDefault();
 
-  if(!challenge||challenge.answered) return;
+  if (!challenge || challenge.answered) return;
 
-  const correct=
-    normalizeAnswer($("#answerInput").value)===
+  const correct =
+    normalizeAnswer($("#answerInput").value) ===
     normalizeAnswer(challenge.question.a);
 
   resolveAnswer(correct,false);
 }
 
-function addModalButton(label,callback,primary=false){
-  const button=document.createElement("button");
+function addModalButton(label,callback,primary=false) {
+  const button = document.createElement("button");
 
-  button.className=primary
-    ?"primary-button compact"
-    :"secondary-button";
+  button.className = primary
+    ? "primary-button compact"
+    : "secondary-button";
 
-  button.textContent=label;
+  button.textContent = label;
   button.addEventListener("click",callback);
 
   $("#modalActions").append(button);
 }
 
-function resolveAnswer(correct,timedOut){
-  if(!challenge||challenge.answered) return;
+function resolveAnswer(correct,timedOut) {
+  if (!challenge || challenge.answered) return;
 
   clearInterval(timerInterval);
 
-  challenge.answered=true;
-  $("#answerInput").disabled=true;
+  challenge.answered = true;
+  $("#answerInput").disabled = true;
   $("#answerForm").classList.add("hidden");
 
-  const c=challenge;
-  const player=players[currentPlayer];
+  const c = challenge;
+  const player = players[currentPlayer];
 
-  $("#modalFeedback").textContent=correct
-    ?"¡Correcto! Has resuelto el ejercicio."
-    :`Respuesta incorrecta. ${timedOut?"Se acabó el tiempo.":""} Respuesta: ${c.question.a}`;
+  $("#modalFeedback").textContent = correct
+    ? "¡Correcto! Has resuelto el ejercicio."
+    : `Respuesta incorrecta. ${timedOut?"Se acabó el tiempo. ":""}Respuesta: ${c.question.a}`;
 
-  $("#modalFeedback").className=
-    correct?"feedback":"feedback bad";
+  $("#modalFeedback").className = correct
+    ? "feedback"
+    : "feedback bad";
 
-  $("#modalActions").innerHTML="";
+  $("#modalActions").innerHTML = "";
 
-  if(c.kind==="property"){
+  // Cada ejercicio correcto concede $50.
+  if (correct) {
+    player.money += 50;
+    addLog(`${player.name} respondió correctamente y recibió $50.`);
+  }
+
+  if (c.kind === "property") {
     handlePropertyAnswer(c,player,correct);
-  }else if(c.kind==="owned"){
-    handleOwnedAnswer(c,player,correct);
-  }else if(c.kind==="prison"){
-    if(correct){
-      player.inJail=false;
 
-      $("#modalDescription").textContent=
-        "¡Has resuelto el reto! Ya puedes salir de la cárcel.";
+  } else if (c.kind === "owned") {
+    handleOwnedAnswer(c,player,correct);
+
+  } else if (c.kind === "prison") {
+    if (correct) {
+      player.inJail = false;
+
+      $("#modalDescription").textContent =
+        "¡Has resuelto el reto! Recibiste $50 y puedes salir de la cárcel.";
 
       addModalButton("Salir de la cárcel",finishChallenge,true);
-    }else{
-      player.inJail=true;
-      player.skipNext=true;
 
-      $("#modalDescription").textContent=
+    } else {
+      player.inJail = true;
+      player.skipNext = true;
+
+      $("#modalDescription").textContent =
         "No has logrado salir. Perderás tu próximo turno.";
 
       addModalButton("Aceptar",finishChallenge,true);
     }
-  }else if(c.kind==="rentChallenge"){
+
+  } else if (c.kind === "rentChallenge") {
     handleRentChallenge(c,player,correct);
   }
 
@@ -931,16 +1095,15 @@ function resolveAnswer(correct,timedOut){
 
 /* PROPIEDADES */
 
-function landOnProperty(space,player){
-  const color=COLORS[space.difficulty];
+function landOnProperty(space,player) {
+  const color = COLORS[space.difficulty];
 
-  if(space.owner===null){
+  if (space.owner === null) {
     openChallenge({
       kind:"property",
       category:`PROPIEDAD · ${color.name}`,
       title:"Oportunidad de compra",
-      description:
-        `Resuelve el ejercicio para poder comprar esta propiedad por $${space.price}.`,
+      description:`Resuelve el ejercicio para poder comprar esta propiedad por $${space.price}.`,
       symbol:color.symbol,
       time:color.time,
       question:randomQuestion(space.difficulty),
@@ -950,7 +1113,7 @@ function landOnProperty(space,player){
     return;
   }
 
-  if(space.owner===currentPlayer){
+  if (space.owner === currentPlayer) {
     openChallenge({
       kind:"owned",
       category:`TU PROPIEDAD · ${color.name}`,
@@ -965,28 +1128,28 @@ function landOnProperty(space,player){
     return;
   }
 
-  let rent=color.rent;
+  let rent = color.rent;
 
-  if(player.rentShield){
-    player.rentShield=false;
+  if (player.rentShield) {
+    player.rentShield = false;
 
     showToast("Tu protección financiera evitó el alquiler.");
-
     addLog(`${player.name} utilizó su protección de alquiler.`);
+
     nextTurn();
     return;
   }
 
-  if(
-    player.discountTarget&&
-    player.discountTarget.spaceIndex===space.index&&
-    player.discountTarget.owner===space.owner
-  ){
-    rent=Math.ceil(rent/2);
-    player.discountTarget=null;
+  if (
+    player.discountTarget &&
+    player.discountTarget.spaceIndex === space.index &&
+    player.discountTarget.owner === space.owner
+  ) {
+    rent = Math.ceil(rent/2);
+    player.discountTarget = null;
   }
 
-  const higher={
+  const higher = {
     green:"blue",
     blue:"purple",
     purple:"red",
@@ -997,8 +1160,7 @@ function landOnProperty(space,player){
     kind:"rentChallenge",
     category:`RETO · ${COLORS[higher].name}`,
     title:"Propiedad ajena",
-    description:
-      `Propiedad de ${players[space.owner].name}. Puedes pagar $${rent} o intentar un ejercicio de mayor dificultad para evitar el alquiler.`,
+    description:`Propiedad de ${players[space.owner].name}. Puedes pagar $${rent} de alquiler o resolver un ejercicio más difícil para intentar comprarla por $${space.price}.`,
     symbol:COLORS[higher].symbol,
     time:COLORS[higher].time,
     question:randomQuestion(higher),
@@ -1007,65 +1169,95 @@ function landOnProperty(space,player){
     higherDifficulty:higher
   });
 
-  addModalButton(`Pagar alquiler · $${rent}`,()=>{
-    if(!challenge||challenge.answered) return;
+  addModalButton(`Pagar alquiler · $${rent}`,() => {
+    if (!challenge || challenge.answered) return;
 
-    const paid=chargePlayer(player,rent);
+    const ownerIndex = space.owner;
+    const paid = settleDebt(player,rent);
 
-    players[space.owner].money+=paid;
+    players[ownerIndex].money += paid;
 
-    addLog(`${player.name} pagó $${paid} de alquiler.`);
+    addLog(
+      `${player.name} pagó $${paid} de alquiler a ${players[ownerIndex].name}.`
+    );
+
+    renderPlayers();
     finishChallenge();
   });
 }
 
-function handlePropertyAnswer(c,player,correct){
-  const space=c.space;
+function handlePropertyAnswer(c,player,correct) {
+  const space = c.space;
 
-  if(correct){
-    $("#modalDescription").textContent=
-      `Puedes comprar esta propiedad por $${space.price}.`;
+  if (correct) {
+    $("#modalDescription").textContent =
+      `¡Correcto! Recibiste $50. Puedes comprar esta propiedad por $${space.price}.`;
 
-    addModalButton(
-      `Comprar · $${space.price}`,
-      ()=>buyProperty(space,player,space.price),
-      true
-    );
+    if (player.money >= space.price) {
+      addModalButton(
+        `Comprar · $${space.price}`,
+        () => buyProperty(space,player,space.price,null),
+        true
+      );
+    } else {
+      $("#modalDescription").textContent =
+        `Recibiste $50, pero no tienes suficiente dinero para comprarla. Necesitas $${space.price}.`;
+    }
 
-    addModalButton("No comprar",finishChallenge);
-  }else{
-    $("#modalDescription").textContent=
+    addModalButton("Continuar",finishChallenge);
+
+  } else {
+    $("#modalDescription").textContent =
       "No has resuelto el ejercicio. No puedes comprar esta propiedad en este turno.";
 
     addModalButton("Continuar",finishChallenge,true);
   }
 }
 
-function handleOwnedAnswer(c,player,correct){
-  $("#modalDescription").textContent=correct
-    ?"¡Correcto! Has demostrado tus conocimientos."
-    :"No te preocupes. Podrás intentarlo en otra ocasión.";
+function handleOwnedAnswer(c,player,correct) {
+  $("#modalDescription").textContent = correct
+    ? "¡Correcto! Recibiste $50 por resolver el ejercicio."
+    : "No te preocupes. Podrás intentarlo en otra ocasión.";
 
   addModalButton("Continuar",finishChallenge,true);
 }
 
-function handleRentChallenge(c,player,correct){
-  const space=c.space;
-  const ownerIndex=space.owner;
-  const rent=c.rent;
+function handleRentChallenge(c,player,correct) {
+  const space = c.space;
+  const ownerIndex = space.owner;
+  const rent = c.rent;
 
-  if(correct){
-    $("#modalDescription").textContent=
-      "¡Correcto! Evitas el alquiler de esta propiedad.";
+  if (correct) {
+    if (player.money >= space.price) {
+      $("#modalDescription").textContent =
+        `¡Correcto! Recibiste $50, evitaste el alquiler y puedes comprar la propiedad por $${space.price}. El dinero pasará a ${players[ownerIndex].name}.`;
 
-    addModalButton("Continuar sin pagar",finishChallenge,true);
+      addModalButton(
+        `Comprar · $${space.price}`,
+        () => buyProperty(space,player,space.price,ownerIndex),
+        true
+      );
+
+    } else {
+      const paid = settleDebt(player,rent);
+      players[ownerIndex].money += paid;
+
+      $("#modalDescription").textContent =
+        `Recibiste $50, pero no tienes suficiente para comprarla. Pagaste $${paid} de alquiler.`;
+
+      addLog(
+        `${player.name} no pudo comprar la propiedad y pagó $${paid} de alquiler.`
+      );
+    }
+
+    addModalButton("Continuar",finishChallenge);
     return;
   }
 
-  if(player.mistakeShield){
-    player.mistakeShield=false;
+  if (player.mistakeShield) {
+    player.mistakeShield = false;
 
-    $("#modalDescription").textContent=
+    $("#modalDescription").textContent =
       "Tu segunda oportunidad te protege. No debes pagar el alquiler.";
 
     addLog(`${player.name} utilizó su segunda oportunidad.`);
@@ -1073,33 +1265,51 @@ function handleRentChallenge(c,player,correct){
     return;
   }
 
-  const paid=chargePlayer(player,rent);
-  players[ownerIndex].money+=paid;
+  const penalty = rent*2;
+  const paid = settleDebt(player,penalty);
 
-  addLog(`${player.name} falló el reto y pagó $${paid} de alquiler.`);
+  players[ownerIndex].money += paid;
 
-  $("#modalDescription").textContent=
-    `Has fallado el ejercicio y debes pagar $${paid} al propietario.`;
+  addLog(
+    `${player.name} falló el reto y pagó $${paid} de penalización a ${players[ownerIndex].name}.`
+  );
+
+  $("#modalDescription").textContent =
+    `Fallaste el ejercicio. La penalización era $${penalty} y pagaste $${paid}.`;
 
   addModalButton("Pagar y continuar",finishChallenge,true);
 }
 
-function buyProperty(space,player,price){
-  if(player.money<price){
-    $("#modalDescription").textContent=
+function buyProperty(space,player,price,previousOwner=null) {
+  if (player.money < price) {
+    $("#modalDescription").textContent =
       `No tienes suficiente dinero. Necesitas $${price}.`;
 
-    $("#modalActions").innerHTML="";
+    $("#modalActions").innerHTML = "";
     addModalButton("Continuar",finishChallenge,true);
     return;
   }
 
-  player.money-=price;
-  space.owner=currentPlayer;
+  const oldOwner = previousOwner !== null
+    ? previousOwner
+    : space.owner;
 
-  addLog(
-    `${player.name} compró la propiedad de la casilla ${space.index} por $${price}.`
-  );
+  player.money -= price;
+
+  if (oldOwner !== null && oldOwner !== undefined) {
+    players[oldOwner].money += price;
+
+    addLog(
+      `${player.name} compró la propiedad de ${players[oldOwner].name} por $${price}.`
+    );
+
+  } else {
+    addLog(
+      `${player.name} compró la propiedad de la casilla ${space.index} por $${price}.`
+    );
+  }
+
+  space.owner = currentPlayer;
 
   renderTokens();
   renderPlayers();
@@ -1109,109 +1319,149 @@ function buyProperty(space,player,price){
 
 /* CÁRCEL */
 
-function openPrison(sentByPolice){
+/*
+  Esta función se utiliza únicamente cuando:
+  - Un jugador cae en la casilla de Policía.
+  - Una carta sorpresa lo envía a la cárcel.
+
+  No se utiliza cuando alguien cae normalmente
+  en la casilla 10.
+*/
+
+function sendPlayerToJail(player,reason="card") {
+  if (!player || player.eliminated) return;
+
+  player.position = 10;
+  player.inJail = true;
+  player.skipNext = false;
+
+  renderPlayers();
+  renderTokens();
+
+  if (reason === "police") {
+    addLog(`${player.name} cayó en la Policía y fue enviado a la cárcel.`);
+    showToast("¡La Policía te ha enviado a la cárcel!");
+
+  } else {
+    addLog(`${player.name} fue enviado a la cárcel por una carta sorpresa.`);
+    showToast("¡Has sido enviado a la cárcel!");
+  }
+
+  openPrison(reason === "police");
+}
+
+function openPrison(sentByPolice) {
+  const selected = randomPrisonQuestion();
+  const color = COLORS[selected.difficulty];
+
   openChallenge({
     kind:"prison",
-    category:sentByPolice?"POLICÍA · DETENCIÓN":"CÁRCEL",
-    title:sentByPolice?"¡Te han detenido!":"La cárcel",
+    category:sentByPolice ? "POLICÍA · DETENCIÓN" : "CÁRCEL",
+    title:sentByPolice ? "¡Te han detenido!" : "¡Has sido enviado a la cárcel!",
     description:sentByPolice
-      ?"El policía te ha enviado a la cárcel. Resuelve el ejercicio para salir."
-      :"Has caído en la cárcel. Resuelve el reto para salir.",
-    symbol:sentByPolice?"♜":"▤",
-    time:25,
-    question:randomQuestion("blue")
+      ? `El policía te ha enviado a la cárcel. Resuelve un ejercicio ${color.name.toLowerCase()} para salir.`
+      : `Una carta sorpresa te ha enviado a la cárcel. Resuelve un ejercicio ${color.name.toLowerCase()} para salir.`,
+    symbol:color.symbol,
+    time:color.time,
+    question:selected.question
   });
 }
 
 /* CARTAS SORPRESA */
 
-function openSurprise(){
-  const card=drawSurpriseCard();
-  const player=players[currentPlayer];
+function openSurprise() {
+  const card = drawSurpriseCard();
+  const player = players[currentPlayer];
 
-  challenge={
+  challenge = {
     kind:"surpriseCard",
     answered:true,
     card
   };
 
-  $("#modalCategory").textContent="CARTA SORPRESA";
-  $("#modalTitle").textContent=card.title;
-  $("#modalDescription").textContent=card.description;
-  $("#modalSymbol").textContent="✧";
-  $("#modalFeedback").textContent="";
-  $("#modalFeedback").className="feedback";
+  $("#modalCategory").textContent = "CARTA SORPRESA";
+  $("#modalTitle").textContent = card.title;
+  $("#modalDescription").textContent = card.description;
+  $("#modalSymbol").textContent = "✧";
+  $("#modalFeedback").textContent = "";
+  $("#modalFeedback").className = "feedback";
 
   $("#timerBox").classList.add("hidden");
   $("#questionBox").classList.add("hidden");
   $("#answerForm").classList.add("hidden");
 
-  $("#modalActions").innerHTML="";
+  $("#modalActions").innerHTML = "";
   $("#modalBackdrop").classList.remove("hidden");
-  $("#rollBtn").disabled=true;
+  $("#rollBtn").disabled = true;
 
   addLog(`${player.name} obtuvo la carta: ${card.title}.`);
 
-  let movement=null;
+  let movement = null;
 
-  switch(card.effect){
+  switch (card.effect) {
     case "money":
-      player.money+=card.value;
+      player.money += card.value;
       break;
 
-    case "loss":{
-      const paid=chargePlayer(player,card.value);
-      $("#modalDescription").textContent=
-        `${card.description} Has pagado $${paid}.`;
+    case "loss": {
+      const paid = settleDebt(player,card.value);
+
+      $("#modalDescription").textContent =
+        `${card.description} Pagaste $${paid}.`;
       break;
     }
 
-    case "perProperty":{
-      const count=spaces.filter(s=>s.owner===currentPlayer).length;
-      const amount=count*card.value;
+    case "perProperty": {
+      const count = spaces.filter(s => s.owner === currentPlayer).length;
+      const amount = Math.min(200,count*card.value);
 
-      player.money+=amount;
+      player.money += amount;
 
-      $("#modalDescription").textContent=
+      $("#modalDescription").textContent =
         `${card.description} Recibes $${amount}.`;
       break;
     }
 
-    case "propertyLoss":{
-      const count=spaces.filter(s=>s.owner===currentPlayer).length;
-      const amount=count*card.value;
-      const paid=chargePlayer(player,amount);
+    case "propertyLoss": {
+      const count = spaces.filter(s => s.owner === currentPlayer).length;
+      const amount = Math.min(200,count*card.value);
+      const paid = settleDebt(player,amount);
 
-      $("#modalDescription").textContent=
-        `${card.description} Has pagado $${paid}.`;
+      $("#modalDescription").textContent =
+        `${card.description} El coste era $${amount}; pagaste $${paid}.`;
       break;
     }
 
     case "move":
-      movement=card.value;
+      movement = card.value;
       break;
 
     case "mistakeShield":
-      player.mistakeShield=true;
+      player.mistakeShield = true;
       break;
 
     case "rentShield":
-      player.rentShield=true;
+      player.rentShield = true;
       break;
 
     case "startBonus":
-      player.startBonus+=card.value;
+      player.startBonus += card.value;
       break;
 
     case "extraTime":
-      player.extraTime+=card.value;
+      player.extraTime += card.value;
+      break;
+
+    case "goToJail":
+      // Se aplica al pulsar el botón de continuar.
+      // Así primero se muestra la carta al jugador.
       break;
 
     case "trade":
-      $("#modalDescription").textContent=
+      $("#modalDescription").textContent =
         "Puedes proponer un intercambio. Si ambos jugadores aceptan, las propiedades cambiarán de dueño.";
 
-      addModalButton("Proponer intercambio",()=>{
+      addModalButton("Proponer intercambio",() => {
         proposeTrade();
       },true);
       break;
@@ -1223,100 +1473,106 @@ function openSurprise(){
 
   renderPlayers();
 
-  if(movement!==null){
-    addModalButton("Aplicar movimiento",()=>{
+  if (card.effect === "goToJail") {
+    addModalButton("Ir a la cárcel",() => {
+      finishChallenge(false);
+      sendPlayerToJail(player,"card");
+    },true);
+
+  } else if (movement !== null) {
+    addModalButton("Aplicar movimiento",() => {
       finishChallenge(false);
       movePlayer(movement);
     },true);
-  }else{
+
+  } else if (!$("#modalActions").children.length) {
     addModalButton("Continuar",finishChallenge,true);
   }
 }
 
 /* INTERCAMBIO DE PROPIEDADES */
 
-function proposeTrade(){
-  const player=players[currentPlayer];
+function proposeTrade() {
+  const player = players[currentPlayer];
 
-  const ownProperties=spaces.filter(s=>s.owner===currentPlayer);
+  const ownProperties = spaces.filter(s => s.owner === currentPlayer);
 
-  if(ownProperties.length===0){
+  if (ownProperties.length === 0) {
     showToast("No tienes propiedades para intercambiar.");
     return;
   }
 
-  const opponents=players
-    .map((p,index)=>({player:p,index}))
-    .filter(item=>
-      item.index!==currentPlayer&&
-      spaces.some(s=>s.owner===item.index)
+  const opponents = players
+    .map((p,index) => ({player:p,index}))
+    .filter(item =>
+      item.index !== currentPlayer &&
+      !item.player.eliminated &&
+      spaces.some(s => s.owner === item.index)
     );
 
-  if(opponents.length===0){
+  if (opponents.length === 0) {
     showToast("Ningún rival tiene propiedades para intercambiar.");
     return;
   }
 
-  const opponentList=opponents
-    .map(item=>`${item.index+1}: ${item.player.name}`)
+  const opponentList = opponents
+    .map(item => `${item.index+1}: ${item.player.name}`)
     .join("\n");
 
-  const opponentNumber=Number(prompt(
+  const opponentNumber = Number(prompt(
     `Elige el jugador rival escribiendo su número:\n${opponentList}`
   ));
 
-  const opponent=opponents.find(item=>item.index===opponentNumber-1);
+  const opponent = opponents.find(item => item.index === opponentNumber-1);
 
-  if(!opponent){
+  if (!opponent) {
     showToast("Jugador no válido.");
     return;
   }
 
-  const rivalProperties=spaces.filter(
-    s=>s.owner===opponent.index
-  );
+  const rivalProperties = spaces.filter(s => s.owner === opponent.index);
 
-  const ownList=ownProperties.map(s=>
+  const ownList = ownProperties.map(s =>
     `Casilla ${s.index} ($${s.price})`
   ).join("\n");
 
-  const rivalList=rivalProperties.map(s=>
+  const rivalList = rivalProperties.map(s =>
     `Casilla ${s.index} ($${s.price})`
   ).join("\n");
 
-  const ownIndex=Number(prompt(
+  const ownIndex = Number(prompt(
     `¿Qué propiedad tuya deseas ofrecer?\n${ownList}\nEscribe el número de casilla:`
   ));
 
-  const mySpace=ownProperties.find(s=>s.index===ownIndex);
+  const mySpace = ownProperties.find(s => s.index === ownIndex);
 
-  if(!mySpace){
+  if (!mySpace) {
     showToast("Tu propiedad no es válida.");
     return;
   }
 
-  const rivalIndex=Number(prompt(
+  const rivalIndex = Number(prompt(
     `¿Qué propiedad deseas recibir?\n${rivalList}\nEscribe el número de casilla:`
   ));
 
-  const rivalSpace=rivalProperties.find(s=>s.index===rivalIndex);
+  const rivalSpace = rivalProperties.find(s => s.index === rivalIndex);
 
-  if(!rivalSpace){
+  if (!rivalSpace) {
     showToast("La propiedad rival no es válida.");
     return;
   }
 
-  const accepted=confirm(
+  const accepted = confirm(
     `${opponent.player.name}, ¿aceptas intercambiar la casilla ${rivalSpace.index} por la casilla ${mySpace.index}?`
   );
 
-  if(!accepted){
+  if (!accepted) {
     showToast("El intercambio fue rechazado.");
     return;
   }
 
-  mySpace.owner=opponent.index;
-  rivalSpace.owner=currentPlayer;
+  mySpace.owner = opponent.index;
+  rivalSpace.owner = currentPlayer;
 
   addLog(
     `${player.name} y ${opponent.player.name} intercambiaron propiedades.`
@@ -1325,105 +1581,110 @@ function proposeTrade(){
   renderTokens();
   renderPlayers();
 
-  $("#modalDescription").textContent=
+  $("#modalDescription").textContent =
     "¡Intercambio realizado! Las dos propiedades han cambiado de dueño.";
 
-  $("#modalActions").innerHTML="";
+  $("#modalActions").innerHTML = "";
   addModalButton("Continuar",finishChallenge,true);
 }
 
 /* DESCUENTO DE ALQUILER */
 
-function chooseDiscountTarget(){
-  const opponents=players
-    .map((p,index)=>({player:p,index}))
-    .filter(item=>
-      item.index!==currentPlayer&&
-      spaces.some(s=>s.owner===item.index)
+function chooseDiscountTarget() {
+  const opponents = players
+    .map((p,index) => ({player:p,index}))
+    .filter(item =>
+      item.index !== currentPlayer &&
+      !item.player.eliminated &&
+      spaces.some(s => s.owner === item.index)
     );
 
-  if(opponents.length===0){
-    $("#modalDescription").textContent=
+  if (opponents.length === 0) {
+    $("#modalDescription").textContent =
       "Todavía no hay propiedades rivales. No puedes usar esta ventaja.";
     return;
   }
 
-  const list=opponents.map(item=>
+  const list = opponents.map(item =>
     `${item.index+1}: ${item.player.name}`
   ).join("\n");
 
-  const number=Number(prompt(
-    `Elige un rival:\n${list}`
-  ));
+  const number = Number(prompt(`Elige un rival:\n${list}`));
+  const opponent = opponents.find(item => item.index === number-1);
 
-  const opponent=opponents.find(item=>item.index===number-1);
-
-  if(!opponent){
-    $("#modalDescription").textContent=
+  if (!opponent) {
+    $("#modalDescription").textContent =
       "No seleccionaste un rival válido. La ventaja no se ha aplicado.";
     return;
   }
 
-  const properties=spaces.filter(s=>s.owner===opponent.index);
+  const properties = spaces.filter(s => s.owner === opponent.index);
 
-  const propertyList=properties.map(s=>
+  const propertyList = properties.map(s =>
     `Casilla ${s.index} · Alquiler $${COLORS[s.difficulty].rent}`
   ).join("\n");
 
-  const propertyNumber=Number(prompt(
+  const propertyNumber = Number(prompt(
     `Elige una propiedad:\n${propertyList}\nEscribe el número de casilla:`
   ));
 
-  const target=properties.find(s=>s.index===propertyNumber);
+  const target = properties.find(s => s.index === propertyNumber);
 
-  if(!target){
-    $("#modalDescription").textContent=
+  if (!target) {
+    $("#modalDescription").textContent =
       "No seleccionaste una propiedad válida. La ventaja no se ha aplicado.";
     return;
   }
 
-  players[currentPlayer].discountTarget={
+  players[currentPlayer].discountTarget = {
     owner:opponent.index,
     spaceIndex:target.index
   };
 
-  $("#modalDescription").textContent=
+  $("#modalDescription").textContent =
     `La próxima vez que caigas en la casilla ${target.index}, pagarás la mitad del alquiler.`;
 }
 
 /* CERRAR RETOS */
 
-function finishChallenge(advanceTurn=true){
+function finishChallenge(advanceTurn=true) {
   clearInterval(timerInterval);
 
   $("#modalBackdrop").classList.add("hidden");
   $("#timerBox").classList.remove("hidden");
   $("#questionBox").classList.remove("hidden");
+  $("#answerForm").classList.remove("hidden");
 
-  challenge=null;
+  challenge = null;
 
   renderPlayers();
   renderTokens();
 
-  if(advanceTurn){
+  if (gameOver) {
+    $("#rollBtn").disabled = true;
+    return;
+  }
+
+  if (advanceTurn) {
     nextTurn();
   }
 }
 
 /* REINICIAR */
 
-function resetGame(){
+function resetGame() {
   clearInterval(timerInterval);
 
-  challenge=null;
-  started=false;
-  isMoving=false;
+  challenge = null;
+  started = false;
+  gameOver = false;
+  isMoving = false;
 
-  currentPlayer=0;
-  round=1;
-  selectedSetupPlayer=0;
+  currentPlayer = 0;
+  round = 1;
+  selectedSetupPlayer = 0;
 
-  surpriseDeck=[];
+  surpriseDeck = [];
 
   createPlayers();
   createSpaces();
@@ -1435,23 +1696,23 @@ function resetGame(){
   $("#setupPanel").classList.remove("hidden");
   $("#modalBackdrop").classList.add("hidden");
 
-  $("#rollBtn").disabled=true;
-  $("#rollHelp").textContent=
+  $("#rollBtn").disabled = true;
+  $("#rollHelp").textContent =
     "Los cuatro jugadores deben elegir un animal.";
 
-  $("#diceMessage").textContent="Listos para jugar";
-  $("#diceTotal").textContent="—";
+  $("#diceMessage").textContent = "Listos para jugar";
+  $("#diceTotal").textContent = "—";
 
-  $("#dieOne").dataset.value=1;
-  $("#dieTwo").dataset.value=1;
+  $("#dieOne").dataset.value = 1;
+  $("#dieTwo").dataset.value = 1;
 
-  $("#roundNumber").textContent="01";
-  $("#roundNumberMobile").textContent="01";
+  $("#roundNumber").textContent = "01";
+  $("#roundNumberMobile").textContent = "01";
 
-  $("#turnLabel").textContent="PREPARANDO PARTIDA";
-  $("#centerStatus").textContent="ELIGE TUS FICHAS PARA COMENZAR";
+  $("#turnLabel").textContent = "PREPARANDO PARTIDA";
+  $("#centerStatus").textContent = "ELIGE TUS FICHAS PARA COMENZAR";
 
-  $("#logList").innerHTML=
+  $("#logList").innerHTML =
     '<p class="empty-log">La partida aún no ha comenzado.</p>';
 }
 
@@ -1461,10 +1722,10 @@ $("#startBtn").addEventListener("click",startGame);
 $("#rollBtn").addEventListener("click",rollDice);
 $("#answerForm").addEventListener("submit",submitAnswer);
 
-$("#closeModal").addEventListener("click",()=>{
-  if(!challenge) return;
+$("#closeModal").addEventListener("click",() => {
+  if (!challenge) return;
 
-  if(!challenge.answered){
+  if (!challenge.answered) {
     showToast("Debes responder o esperar a que termine el tiempo.");
     return;
   }
@@ -1472,17 +1733,17 @@ $("#closeModal").addEventListener("click",()=>{
   finishChallenge();
 });
 
-$("#resetBtn").addEventListener("click",()=>{
-  if(confirm("¿Quieres reiniciar toda la partida?")){
+$("#resetBtn").addEventListener("click",() => {
+  if (confirm("¿Quieres reiniciar toda la partida?")) {
     resetGame();
   }
 });
 
-$("#modalBackdrop").addEventListener("click",event=>{
-  if(
-    event.target===$("#modalBackdrop")&&
+$("#modalBackdrop").addEventListener("click",event => {
+  if (
+    event.target === $("#modalBackdrop") &&
     challenge?.answered
-  ){
+  ) {
     finishChallenge();
   }
 });
