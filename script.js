@@ -1,7 +1,7 @@
 import { auth, db } from "./firebase.js";
 import { onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js";
 import {
-  collection, doc, getDoc, onSnapshot,
+  collection, deleteDoc, doc, getDoc, onSnapshot,
   runTransaction, serverTimestamp, setDoc, updateDoc
 } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
 
@@ -225,6 +225,8 @@ let challenge = null;
 let timerInterval = null;
 let toastTimeout = null;
 let isMoving = false;
+let isRollingDice = false;
+let playerRollPending = false;
 let surpriseDeck = [];
 
 /* MULTIJUGADOR: ADMINISTRADOR Y CUATRO JUGADORES */
@@ -234,6 +236,7 @@ let roomCode = null;
 let roomRef = null;
 let roomUnsubscribe = null;
 let rosterUnsubscribe = null;
+let rollRequestsUnsubscribe = null;
 let roomRoster = [];
 let selectedPlayerAnimal = null;
 let myPlayerProfile = null;
@@ -816,8 +819,9 @@ async function startGame() {
   $("#gameLayout").classList.remove("hidden");
   $("#setupPanel").classList.add("hidden");
   $("#resetBtn").hidden = false;
-  $("#rollBtn").disabled = false;
-  $("#rollHelp").textContent = "Lanza los dados para avanzar.";
+  $("#rollBtn").hidden = true;
+  $("#rollBtn").disabled = true;
+  $("#rollHelp").textContent = "Cada jugador lanza los dados desde su propio dispositivo.";
   $("#centerStatus").textContent = "LA PARTIDA ESTÁ EN CURSO";
   $("#topRoomLabel").textContent = `SALA ${roomCode}`;
 
@@ -844,7 +848,7 @@ async function startGame() {
 /* DADOS Y MOVIMIENTO */
 
 function rollDice() {
-  if (!started || gameOver || challenge || isMoving) return;
+  if (appMode !== "admin" || !started || gameOver || challenge || isMoving || isRollingDice) return;
 
   const player = players[currentPlayer];
 
@@ -863,6 +867,8 @@ function rollDice() {
     nextTurn();
     return;
   }
+
+  isRollingDice = true;
 
   const d1 = 1 + Math.floor(Math.random()*6);
   const d2 = 1 + Math.floor(Math.random()*6);
@@ -883,6 +889,7 @@ function rollDice() {
     $("#diceMessage").textContent = `${d1} + ${d2} casillas`;
     $("#diceTotal").textContent = total;
 
+    isRollingDice = false;
     movePlayer(total);
   },650);
 }
@@ -1733,6 +1740,8 @@ async function resetGame() {
   started = false;
   gameOver = false;
   isMoving = false;
+  isRollingDice = false;
+  playerRollPending = false;
   currentPlayer = 0;
   round = 1;
   selectedSetupPlayer = 0;
@@ -1789,7 +1798,10 @@ async function resetGame() {
 
 /* EVENTOS */
 
-$("#rollBtn").addEventListener("click", rollDice);
+$("#rollBtn").addEventListener("click", () => {
+  if (appMode === "player") requestPlayerRoll();
+  else if (appMode === "admin") showToast("Los jugadores lanzan los dados desde sus dispositivos.");
+});
 $("#answerForm").addEventListener("submit", submitAnswer);
 
 $("#closeModal").addEventListener("click",() => {
@@ -1927,6 +1939,7 @@ function showAdminLobby() {
 
 function subscribeToRoom() {
   if (roomUnsubscribe) roomUnsubscribe();
+  if (appMode === "admin") subscribeToRollRequests();
   roomUnsubscribe = onSnapshot(roomRef, snapshot => {
     if (!snapshot.exists()) {
       showToast("La sala ya no existe.");
@@ -2133,6 +2146,7 @@ function buildGameState() {
     round,
     started,
     gameOver,
+    turnPhase: challenge ? "challenge" : (isMoving || isRollingDice) ? "moving" : "roll",
     diceOne: Number($("#dieOne").dataset.value || 1),
     diceTwo: Number($("#dieTwo").dataset.value || 1),
     diceTotal: $("#diceTotal").textContent,
@@ -2140,6 +2154,132 @@ function buildGameState() {
     log: Array.from($("#logList").querySelectorAll(".log-entry span:last-child"))
       .map(item => item.textContent).slice(0,6)
   };
+}
+
+async function requestPlayerRoll() {
+  if (appMode !== "player" || !roomRef || !currentUid || !myPlayerProfile || !started || gameOver) return;
+
+  const activePlayer = players[currentPlayer];
+  if (!activePlayer || activePlayer.uid !== currentUid) {
+    showToast("Todavía no es tu turno.");
+    return;
+  }
+
+  if (playerRollPending) return;
+
+  playerRollPending = true;
+  $("#rollBtn").disabled = true;
+  $("#rollHelp").textContent = "Enviando tu lanzamiento...";
+
+  const animation = !activePlayer.skipNext;
+  if (animation) {
+    $("#dieOne").classList.add("rolling");
+    $("#dieTwo").classList.add("rolling");
+    $("#diceMessage").textContent = "Tus dados están rodando...";
+    $("#diceTotal").textContent = "—";
+  } else {
+    $("#diceMessage").textContent = "Este turno debes pasar.";
+    $("#diceTotal").textContent = "—";
+  }
+
+  try {
+    // El jugador solicita la tirada desde su dispositivo. El administrador
+    // genera el resultado oficial y sincroniza los dados con toda la sala.
+    const requestRef = doc(roomRef, "rollRequests", currentUid);
+    await setDoc(requestRef, {
+      uid: currentUid,
+      type: "roll",
+      createdAt: Date.now()
+    });
+
+    if (animation) {
+      await new Promise(resolve => setTimeout(resolve, 650));
+      $("#dieOne").classList.remove("rolling");
+      $("#dieTwo").classList.remove("rolling");
+    }
+
+    $("#rollHelp").textContent = activePlayer.skipNext
+      ? "Turno comunicado. Espera a que se actualice el siguiente turno."
+      : "Tirada enviada. Espera a que aparezca el resultado compartido.";
+  } catch (error) {
+    console.error("No se pudo solicitar el lanzamiento:", error);
+    $("#dieOne").classList.remove("rolling");
+    $("#dieTwo").classList.remove("rolling");
+    playerRollPending = false;
+    updatePlayerRollControls();
+    showToast(error.code === "permission-denied"
+      ? "No es tu turno o la solicitud no está permitida."
+      : "No se pudo enviar el lanzamiento. Comprueba tu conexión.");
+  }
+}
+
+function updatePlayerRollControls(phase = "roll") {
+  const activePlayer = players[currentPlayer];
+  const isMyTurn = activePlayer?.uid === currentUid;
+  const canRoll = appMode === "player" && started && !gameOver && isMyTurn
+    && !activePlayer?.eliminated && phase === "roll" && !playerRollPending;
+
+  $("#rollBtn").hidden = false;
+  $("#rollBtn").disabled = !canRoll;
+  $("#rollBtn").innerHTML = activePlayer?.skipNext
+    ? 'Continuar turno <span class="arrow">↗</span>'
+    : 'Tirar los dados <span class="arrow">↗</span>';
+
+  if (gameOver) {
+    $("#rollHelp").textContent = "La partida ha terminado.";
+  } else if (playerRollPending) {
+    $("#rollHelp").textContent = "Tu lanzamiento fue enviado. Espera el resultado.";
+  } else if (phase === "challenge" || phase === "moving") {
+    $("#rollHelp").textContent = "Espera a que termine el movimiento o el reto.";
+  } else if (isMyTurn) {
+    $("#rollHelp").textContent = activePlayer?.skipNext
+      ? "Es tu turno, pero debes cumplir la pérdida de turno."
+      : "¡Es tu turno! Toca aquí para lanzar los dados.";
+  } else {
+    $("#rollHelp").textContent = `Espera el turno de ${activePlayer?.name || "otro jugador"}.`;
+  }
+}
+
+function subscribeToRollRequests() {
+  if (appMode !== "admin" || !roomRef) return;
+  if (rollRequestsUnsubscribe) rollRequestsUnsubscribe();
+
+  rollRequestsUnsubscribe = onSnapshot(collection(roomRef, "rollRequests"), snapshot => {
+    snapshot.docChanges().forEach(change => {
+      if (change.type === "added") {
+        processRollRequest(change.doc.ref, change.doc.data());
+      }
+    });
+  }, error => {
+    console.error("Error al escuchar solicitudes de lanzamiento:", error);
+    showToast("No se pudieron recibir los lanzamientos de los jugadores.");
+  });
+}
+
+async function processRollRequest(requestRef, requestData) {
+  if (appMode !== "admin") return;
+
+  const activePlayer = players[currentPlayer];
+  const isValidRequest = started && !gameOver && !challenge && !isMoving
+    && !isRollingDice && activePlayer && activePlayer.uid === requestData.uid
+    && requestData.type === "roll";
+
+  try {
+    // El documento de solicitud se elimina para permitir que ese jugador
+    // pueda volver a lanzar cuando le corresponda otro turno.
+    await deleteDoc(requestRef);
+  } catch (error) {
+    console.error("No se pudo cerrar la solicitud de lanzamiento:", error);
+    showToast("No se pudo procesar el lanzamiento solicitado.");
+    return;
+  }
+
+  if (!isValidRequest) {
+    showToast("Se ignoró una solicitud porque ya no correspondía al turno actual.");
+    return;
+  }
+
+  rollDice();
 }
 
 function scheduleRoomSync() {
@@ -2178,8 +2318,9 @@ function restoreGameState(state) {
   renderTokens();
   updateTurnLabel();
   $("#centerStatus").textContent = gameOver ? "PARTIDA FINALIZADA" : "LA PARTIDA ESTÁ EN CURSO";
-  $("#rollBtn").disabled = gameOver;
-  $("#rollHelp").textContent = gameOver ? "La partida ha terminado." : "Lanza los dados para avanzar.";
+  $("#rollBtn").hidden = true;
+  $("#rollBtn").disabled = true;
+  $("#rollHelp").textContent = gameOver ? "La partida ha terminado." : "Los jugadores lanzan los dados desde sus dispositivos.";
   $("#adminHomePanel").classList.add("hidden");
   $("#gameLayout").classList.remove("hidden");
   $("#resetBtn").hidden = false;
@@ -2214,7 +2355,7 @@ function renderPlayerGame(state,status) {
   $("#playerWaitingPanel").classList.add("hidden");
   $("#gameLayout").classList.remove("hidden");
   $("#resetBtn").hidden = true;
-  $("#rollBtn").hidden = true;
+  $("#rollBtn").hidden = false;
   $("#setupPanel").classList.add("hidden");
   $("#playerLiveNotice").classList.remove("hidden");
 
@@ -2237,9 +2378,11 @@ function renderPlayerGame(state,status) {
   const turnPlayer = players[currentPlayer];
   const isMyTurn = turnPlayer?.uid === currentUid;
   $("#playerLiveTitle").textContent = isMyTurn ? "¡Es tu turno!" : `Turno de ${turnPlayer?.name || "otro jugador"}`;
-  $("#playerLiveText").textContent = `${myPlayerProfile.name} · ${myPlayerProfile.animal.name}. El administrador gestiona los dados y la banca desde su panel.`;
-  $("#rollBtn").disabled = true;
-  $("#rollHelp").textContent = "El administrador controla los dados y los retos.";
+  $("#playerLiveText").textContent = `${myPlayerProfile.name} · ${myPlayerProfile.animal.name}. Tú lanzas los dados cuando sea tu turno; el administrador gestiona la banca.`;
+  if (players[currentPlayer]?.uid !== currentUid || state.turnPhase !== "roll") {
+    playerRollPending = false;
+  }
+  updatePlayerRollControls(state.turnPhase || "roll");
   isApplyingRemoteState = false;
 }
 
