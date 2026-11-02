@@ -1,23 +1,22 @@
-
 const $ = selector => document.querySelector(selector);
 
 /* CONFIGURACIÓN DE PROPIEDADES */
 
 const COLORS = {
   green: {
-    name: "FÁCIL", color: "#32965c", time: 15,
+    name: "FÁCIL · $100", color: "#32965c", time: 15,
     rent: 30, price: 100, symbol: "+"
   },
   blue: {
-    name: "NORMAL", color: "#397fc9", time: 25,
+    name: "NORMAL · $200", color: "#397fc9", time: 25,
     rent: 60, price: 200, symbol: "÷"
   },
   purple: {
-    name: "ELEVADA", color: "#9253c5", time: 60,
+    name: "ELEVADA · $350", color: "#9253c5", time: 60,
     rent: 105, price: 350, symbol: "√"
   },
   red: {
-    name: "MUY DIFÍCIL", color: "#d9434c", time: 120,
+    name: "MUY DIFÍCIL · $500", color: "#d9434c", time: 120,
     rent: 150, price: 500, symbol: "∫"
   }
 };
@@ -273,9 +272,7 @@ function normalizeAnswer(value) {
     .replace(/\s+/g,"")
     .replace(/−/g,"-")
     .replace(/²/g,"^2");
-}
-
-/* ELIMINACIÓN Y VICTORIA */
+}/* ELIMINACIÓN Y VICTORIA */
 
 function eliminatePlayer(player) {
   if (!player || player.eliminated) return;
@@ -374,7 +371,9 @@ function createSpaces() {
 
   const surprises = new Set([4,14,24,34,37]);
 
-  const shuffled = shuffleArray(propertyTypes);
+  // DISTRIBUCIÓN FIJA DE LAS PROPIEDADES
+  // Ya no se mezclan al recargar o reiniciar la página.
+  const shuffled = [...propertyTypes];
   let propertyIndex = 0;
 
   spaces = coordinates.map(([row,col],index) => {
@@ -754,9 +753,7 @@ function showToast(message) {
   toastTimeout = setTimeout(() => {
     toast.classList.remove("show");
   },2300);
-}
-
-/* INICIAR PARTIDA */
+}/* INICIAR PARTIDA */
 
 function startGame() {
   if (!players.every(player => player.animal)) return;
@@ -889,9 +886,8 @@ async function movePlayer(steps) {
     sendPlayerToJail(player,"police");
 
   } else if (space.type === "prison") {
-    // IMPORTANTE:
-    // Caer en la casilla 10 no significa estar encarcelado.
-    // El jugador solamente está de visita.
+    // Caer en la casilla 10 significa estar de visita.
+    // No se pierde el turno ni se realiza un ejercicio.
     player.inJail = false;
 
     addLog(`${player.name} está de visita en la cárcel.`);
@@ -1091,9 +1087,7 @@ function resolveAnswer(correct,timedOut) {
 
   renderPlayers();
   renderTokens();
-}
-
-/* PROPIEDADES */
+}/* PROPIEDADES */
 
 function landOnProperty(space,player) {
   const color = COLORS[space.difficulty];
@@ -1319,15 +1313,6 @@ function buyProperty(space,player,price,previousOwner=null) {
 
 /* CÁRCEL */
 
-/*
-  Esta función se utiliza únicamente cuando:
-  - Un jugador cae en la casilla de Policía.
-  - Una carta sorpresa lo envía a la cárcel.
-
-  No se utiliza cuando alguien cae normalmente
-  en la casilla 10.
-*/
-
 function sendPlayerToJail(player,reason="card") {
   if (!player || player.eliminated) return;
 
@@ -1454,7 +1439,6 @@ function openSurprise() {
 
     case "goToJail":
       // Se aplica al pulsar el botón de continuar.
-      // Así primero se muestra la carta al jugador.
       break;
 
     case "trade":
