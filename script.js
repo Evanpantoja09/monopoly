@@ -1823,7 +1823,17 @@ $("#modalBackdrop").addEventListener("click",event => {
   if (event.target === $("#modalBackdrop") && challenge?.answered) finishChallenge();
 });
 
-$("#adminCreateRoomBtn").addEventListener("click", createRoom);
+$("#adminCreateRoomBtn").addEventListener("click", () => createRoom($("#adminCreateRoomBtn")));
+$("#adminNewRoomBtn").addEventListener("click", () => {
+  if (!roomRef || appMode !== "admin") return;
+
+  const previousCode = roomCode;
+  const accepted = confirm(
+    `¿Crear una sala nueva? La sala ${previousCode} seguirá guardada en Firebase, pero los jugadores deberán entrar usando el nuevo código y QR.`
+  );
+
+  if (accepted) createRoom($("#adminNewRoomBtn"));
+});
 $("#adminStartBtn").addEventListener("click", startGame);
 $("#copyRoomLinkBtn").addEventListener("click", async () => {
   if (!invitationUrl) return;
@@ -1870,10 +1880,14 @@ function getInvitationUrl(code) {
   return url.toString();
 }
 
-async function createRoom() {
-  const button = $("#adminCreateRoomBtn");
+async function createRoom(triggerButton = $("#adminCreateRoomBtn")) {
+  const button = triggerButton;
+  if (button.disabled) return;
   button.disabled = true;
-  $("#adminMessage").textContent = "Creando sala segura...";
+
+  const isNewRoomAction = button.id === "adminNewRoomBtn";
+  const message = isNewRoomAction ? $("#adminLobbyStatus") : $("#adminMessage");
+  if (message) message.textContent = "Creando sala segura...";
 
   try {
     for (let attempt = 0; attempt < 8; attempt++) {
@@ -1891,6 +1905,29 @@ async function createRoom() {
         updatedAt: Date.now()
       });
 
+      // La sala anterior permanece guardada en Firestore. Solo dejamos de
+      // escucharla desde esta ventana y cambiamos el panel a la sala nueva.
+      if (roomUnsubscribe) {
+        roomUnsubscribe();
+        roomUnsubscribe = null;
+      }
+      if (rosterUnsubscribe) {
+        rosterUnsubscribe();
+        rosterUnsubscribe = null;
+      }
+      clearTimeout(roomSaveTimeout);
+      clearInterval(timerInterval);
+
+      roomRoster = [];
+      players = [];
+      challenge = null;
+      started = false;
+      gameOver = false;
+      isMoving = false;
+      currentPlayer = 0;
+      round = 1;
+      playerRollPending = false;
+
       roomCode = code;
       roomRef = candidateRef;
       localStorage.setItem("monopolyAdminRoom",code);
@@ -1903,8 +1940,9 @@ async function createRoom() {
     throw new Error("No se pudo encontrar un código de sala libre. Intenta nuevamente.");
   } catch (error) {
     console.error(error);
-    $("#adminMessage").textContent = error.message || "No se pudo crear la sala.";
-    showToast("No se pudo crear la sala. Revisa las reglas de Firestore.");
+    if (message) message.textContent = error.message || "No se pudo crear la sala.";
+    console.error("No se pudo crear una sala:", error);
+    showToast("No se pudo crear la sala. Revisa la conexión y las reglas de Firestore.");
   } finally {
     button.disabled = false;
   }

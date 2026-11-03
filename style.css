@@ -243,3 +243,5 @@ button:disabled{opacity:.4;cursor:not-allowed}
 
 
 [hidden]{display:none!important}
+
+.room-details>.new-room-button{display:block;width:100%;margin:0 0 14px}
