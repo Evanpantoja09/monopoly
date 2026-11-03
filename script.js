@@ -263,6 +263,7 @@ let roomUnsubscribe = null;
 let rosterUnsubscribe = null;
 let rollRequestsUnsubscribe = null;
 let answerRequestsUnsubscribe = null;
+let playerActionRequestsUnsubscribe = null;
 let remoteChallengeId = null;
 let remoteChallengeAnswered = false;
 let playerAnswerPending = false;
@@ -681,14 +682,17 @@ function renderMyProperties() {
 
   if (!list || !label || !count) return;
 
-  const player = players[currentPlayer];
+  const propertyPlayerIndex = appMode === "player"
+    ? players.findIndex(item => item.uid === currentUid)
+    : currentPlayer;
+  const player = players[propertyPlayerIndex];
 
   if (!player) {
     list.innerHTML = '<p class="property-empty">Aún no hay jugadores.</p>';
     return;
   }
 
-  const owned = spaces.filter(space => space.owner === currentPlayer);
+  const owned = spaces.filter(space => space.owner === propertyPlayerIndex);
 
   label.textContent = `Propiedades de ${player.name}`;
   count.textContent = `${owned.length} PROPIEDAD${owned.length===1?"":"ES"}`;
@@ -1177,7 +1181,7 @@ function resolveAnswer(correct,timedOut) {
       $("#modalDescription").textContent =
         "¡Has resuelto el reto! Recibiste $50 y puedes salir de la cárcel.";
 
-      addModalButton("Salir de la cárcel",finishChallenge,true);
+      challenge.canContinue = true;
 
     } else {
       player.inJail = true;
@@ -1186,7 +1190,7 @@ function resolveAnswer(correct,timedOut) {
       $("#modalDescription").textContent =
         "No has logrado salir. Perderás tu próximo turno.";
 
-      addModalButton("Aceptar",finishChallenge,true);
+      challenge.canContinue = true;
     }
 
   } else if (c.kind === "rentChallenge") {
@@ -1299,23 +1303,24 @@ function handlePropertyAnswer(c,player,correct) {
       `¡Correcto! Recibiste $50. Puedes comprar esta propiedad por $${space.price}.`;
 
     if (player.money >= space.price) {
-      addModalButton(
-        `Comprar · $${space.price}`,
-        () => buyProperty(space,player,space.price,null),
-        true
-      );
+      challenge.purchaseOffer = {
+        spaceIndex: space.index,
+        price: space.price,
+        previousOwner: null
+      };
+      challenge.publicDescription =
+        `¡Correcto! Recibiste $50. Puedes comprar esta propiedad por $${space.price}.`;
     } else {
       $("#modalDescription").textContent =
         `Recibiste $50, pero no tienes suficiente dinero para comprarla. Necesitas $${space.price}.`;
     }
-
-    addModalButton("Continuar",finishChallenge);
+    challenge.canContinue = true;
 
   } else {
     $("#modalDescription").textContent =
       "No has resuelto el ejercicio. No puedes comprar esta propiedad en este turno.";
 
-    addModalButton("Continuar",finishChallenge,true);
+    challenge.canContinue = true;
   }
 }
 
@@ -1324,7 +1329,7 @@ function handleOwnedAnswer(c,player,correct) {
     ? "¡Correcto! Recibiste $50 por resolver el ejercicio."
     : "No te preocupes. Podrás intentarlo en otra ocasión.";
 
-  addModalButton("Continuar",finishChallenge,true);
+  challenge.canContinue = true;
 }
 
 function handleRentChallenge(c,player,correct) {
@@ -1337,11 +1342,14 @@ function handleRentChallenge(c,player,correct) {
       $("#modalDescription").textContent =
         `¡Correcto! Recibiste $50, evitaste el alquiler y puedes comprar la propiedad por $${space.price}. El dinero pasará a ${players[ownerIndex].name}.`;
 
-      addModalButton(
-        `Comprar · $${space.price}`,
-        () => buyProperty(space,player,space.price,ownerIndex),
-        true
-      );
+      challenge.purchaseOffer = {
+        spaceIndex: space.index,
+        price: space.price,
+        previousOwner: ownerIndex
+      };
+      challenge.publicDescription =
+        `¡Correcto! Recibiste $50, evitaste el alquiler y puedes comprar la propiedad por $${space.price}. El dinero pasará a ${players[ownerIndex].name}.`;
+      challenge.canContinue = true;
 
     } else {
       const paid = settleDebt(player,rent);
@@ -1353,6 +1361,7 @@ function handleRentChallenge(c,player,correct) {
       addLog(
         `${player.name} no pudo comprar la propiedad y pagó $${paid} de alquiler.`
       );
+      challenge.canContinue = true;
     }
 
     addModalButton("Continuar",finishChallenge);
@@ -1366,7 +1375,7 @@ function handleRentChallenge(c,player,correct) {
       "Tu segunda oportunidad te protege. No debes pagar el alquiler.";
 
     addLog(`${player.name} utilizó su segunda oportunidad.`);
-    addModalButton("Continuar",finishChallenge,true);
+    challenge.canContinue = true;
     return;
   }
 
@@ -1381,8 +1390,7 @@ function handleRentChallenge(c,player,correct) {
 
   $("#modalDescription").textContent =
     `Fallaste el ejercicio. La penalización era $${penalty} y pagaste $${paid}.`;
-
-  addModalButton("Pagar y continuar",finishChallenge,true);
+  challenge.canContinue = true;
 }
 
 function buyProperty(space,player,price,previousOwner=null) {
@@ -1972,6 +1980,10 @@ async function createRoom(triggerButton = $("#adminCreateRoomBtn")) {
         answerRequestsUnsubscribe();
         answerRequestsUnsubscribe = null;
       }
+      if (playerActionRequestsUnsubscribe) {
+        playerActionRequestsUnsubscribe();
+        playerActionRequestsUnsubscribe = null;
+      }
       clearTimeout(roomSaveTimeout);
       clearInterval(timerInterval);
 
@@ -2037,6 +2049,7 @@ function subscribeToRoom() {
   if (appMode === "admin") {
     subscribeToRollRequests();
     subscribeToAnswerRequests();
+    subscribeToPlayerActionRequests();
   }
   roomUnsubscribe = onSnapshot(roomRef, snapshot => {
     if (!snapshot.exists()) {
@@ -2256,7 +2269,9 @@ function buildGameState() {
       question: challenge.question ? { q: challenge.question.q } : null,
       deadlineAt: challenge.deadlineAt || null,
       answered: !!challenge.answered,
-      feedback: challenge.publicFeedback || ""
+      feedback: challenge.publicFeedback || "",
+      purchaseOffer: challenge.purchaseOffer || null,
+      canContinue: !!challenge.canContinue
     } : null,
     diceOne: Number($("#dieOne").dataset.value || 1),
     diceTwo: Number($("#dieTwo").dataset.value || 1),
@@ -2308,6 +2323,92 @@ async function submitPlayerAnswer() {
   }
 }
 
+async function requestPlayerChallengeAction(action) {
+  if (appMode !== "player" || !roomRef || !currentUid || !challenge || !challenge.answered) return;
+  if (challenge.targetUid !== currentUid) {
+    showToast("Esta decisión corresponde a otro jugador.");
+    return;
+  }
+  if (playerAnswerPending) return;
+  if (action === "buy" && !challenge.purchaseOffer) return;
+
+  playerAnswerPending = true;
+  const buttons = $("#modalActions").querySelectorAll("button");
+  buttons.forEach(button => button.disabled = true);
+  $("#modalDescription").textContent = action === "buy"
+    ? "Enviando tu compra..."
+    : "Enviando tu decisión...";
+
+  try {
+    await setDoc(doc(roomRef, "playerActionRequests", currentUid), {
+      uid: currentUid,
+      challengeId: challenge.id,
+      action,
+      createdAt: Date.now()
+    });
+  } catch (error) {
+    console.error("No se pudo enviar la acción del jugador:", error);
+    playerAnswerPending = false;
+    showToast(error.code === "permission-denied"
+      ? "Firestore no autorizó esta acción. Actualiza las reglas de la sala."
+      : "No se pudo enviar la acción. Comprueba tu conexión.");
+    renderPlayerChallenge(challenge);
+  }
+}
+
+function subscribeToPlayerActionRequests() {
+  if (appMode !== "admin" || !roomRef) return;
+  if (playerActionRequestsUnsubscribe) playerActionRequestsUnsubscribe();
+  playerActionRequestsUnsubscribe = onSnapshot(
+    collection(roomRef, "playerActionRequests"),
+    snapshot => snapshot.docChanges().forEach(change => {
+      if (change.type === "added") {
+        processPlayerActionRequest(change.doc.ref, change.doc.data());
+      }
+    }),
+    error => {
+      console.error("Error al escuchar acciones de jugadores:", error);
+      showToast("No se pudieron recibir las decisiones de compra.");
+    }
+  );
+}
+
+async function processPlayerActionRequest(requestRef, data) {
+  if (appMode !== "admin") return;
+  const activePlayer = players[currentPlayer];
+  const validBase = started && !gameOver && challenge && challenge.answered
+    && activePlayer && activePlayer.uid === data.uid
+    && challenge.targetUid === data.uid && challenge.id === data.challengeId;
+  try {
+    await deleteDoc(requestRef);
+  } catch (error) {
+    console.error("No se pudo cerrar la acción del jugador:", error);
+    showToast("No se pudo procesar la decisión del jugador.");
+    return;
+  }
+  if (!validBase || !challenge) return;
+
+  if (data.action === "buy") {
+    const offer = challenge.purchaseOffer;
+    if (!offer || !Number.isInteger(offer.spaceIndex) || !Number.isFinite(offer.price)) return;
+    const space = spaces.find(item => item.index === offer.spaceIndex);
+    const player = players[currentPlayer];
+    if (!space || space.owner !== offer.previousOwner || player.money < offer.price) {
+      challenge.purchaseOffer = null;
+      challenge.publicDescription = "La compra ya no está disponible o no tienes saldo suficiente.";
+      challenge.canContinue = true;
+      scheduleRoomSync();
+      return;
+    }
+    buyProperty(space, player, offer.price, offer.previousOwner);
+    return;
+  }
+
+  if (data.action === "continue" && challenge.canContinue) {
+    finishChallenge();
+  }
+}
+
 function renderPlayerChallenge(remote) {
   if (appMode !== "player") return;
 
@@ -2337,10 +2438,6 @@ function renderPlayerChallenge(remote) {
     return;
   }
 
-  // El reto remoto debe abrirse en la pantalla del jugador destinatario.
-  // Antes se actualizaba el contenido, pero el fondo del modal seguía oculto.
-  $("#modalBackdrop").classList.remove("hidden");
-
   const isNewChallenge = remoteChallengeId !== remote.id;
   const answerJustProcessed = !remoteChallengeAnswered && !!remote.answered;
   if (isNewChallenge || answerJustProcessed) {
@@ -2352,7 +2449,9 @@ function renderPlayerChallenge(remote) {
   challenge = {
     ...remote,
     answered: !!remote.answered,
-    question: remote.question ? { q: remote.question.q } : null
+    question: remote.question ? { q: remote.question.q } : null,
+    purchaseOffer: remote.purchaseOffer || null,
+    canContinue: !!remote.canContinue
   };
 
   $("#modalCategory").textContent = remote.category || "RETO MATEMÁTICO";
@@ -2386,12 +2485,29 @@ function renderPlayerChallenge(remote) {
     $("#answerForm").classList.add("hidden");
   }
 
-  if (remote.answered) {
+  if (remote.answered && isTargetPlayer) {
+    if (remote.purchaseOffer) {
+      addModalButton(
+        `Comprar · $${remote.purchaseOffer.price}`,
+        () => requestPlayerChallengeAction("buy"),
+        true
+      );
+    }
+    if (remote.canContinue) {
+      addModalButton("Continuar", () => requestPlayerChallengeAction("continue"), !remote.purchaseOffer);
+    }
+    if (playerAnswerPending) {
+      const note = document.createElement("p");
+      note.className = "helper";
+      note.textContent = "Tu decisión fue enviada. Espera un momento.";
+      $("#modalActions").append(note);
+    }
+  } else if (remote.answered) {
     const note = document.createElement("p");
     note.className = "helper";
     note.textContent = isSharedCard
       ? "El administrador aplicará el efecto de esta carta."
-      : "Respuesta registrada. El administrador está actualizando la partida.";
+      : "El jugador activo está eligiendo cómo continuar.";
     $("#modalActions").append(note);
   } else if (!isTargetPlayer) {
     const note = document.createElement("p");
