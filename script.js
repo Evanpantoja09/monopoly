@@ -2337,6 +2337,10 @@ function renderPlayerChallenge(remote) {
     return;
   }
 
+  // El reto remoto debe abrirse en la pantalla del jugador destinatario.
+  // Antes se actualizaba el contenido, pero el fondo del modal seguía oculto.
+  $("#modalBackdrop").classList.remove("hidden");
+
   const isNewChallenge = remoteChallengeId !== remote.id;
   const answerJustProcessed = !remoteChallengeAnswered && !!remote.answered;
   if (isNewChallenge || answerJustProcessed) {
