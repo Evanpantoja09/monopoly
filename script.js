@@ -59,42 +59,67 @@ const QUESTIONS = {
     {q:"120 ÷ 6 = ?",a:"20"},
     {q:"10% de 350 = ?",a:"35"},
     {q:"16 × 4 = ?",a:"64"},
-    {q:"84 ÷ 7 = ?",a:"12"}
+    {q:"84 ÷ 7 = ?",a:"12"},
+    {q:"3³ = ?",a:"27"},
+    {q:"250 − 75 = ?",a:"175"},
+    {q:"38 + 47 = ?",a:"85"},
+    {q:"11² = ?",a:"121"},
+    {q:"225 ÷ 15 = ?",a:"15"},
+    {q:"40% de 90 = ?",a:"36"}
   ],
 
   blue: [
     {q:"5! = ?",a:"120"},
     {q:"4! = ?",a:"24"},
     {q:"6! = ?",a:"720"},
-    {q:"√144 = ?",a:"12"},
-    {q:"√225 = ?",a:"15"},
-    {q:"√324 = ?",a:"18"},
     {q:"125 × 24 = ?",a:"3000"},
     {q:"36 × 48 = ?",a:"1728"},
     {q:"125 × 16 = ?",a:"2000"},
     {q:"1/2 + 1/4 = ?",a:"3/4"},
-    {q:"3/4 + 1/2 = ?",a:"5/4"},
     {q:"2/3 de 90 = ?",a:"60"},
     {q:"5/8 de 80 = ?",a:"50"},
-    {q:"7! = ?",a:"5040"}
+    {q:"7! = ?",a:"5040"},
+    {q:"2⁵ × 3 = ?",a:"96"},
+    {q:"3² + 4² = ?",a:"25"},
+    {q:"15% de 360 = ?",a:"54"},
+    {q:"4³ + 2⁴ = ?",a:"80"},
+    {q:"18% de 500 = ?",a:"90"}
   ],
 
   purple: [
-    {q:"2x² = 50. ¿x positivo = ?",a:"5"},
-    {q:"Si f(x) = 3x − 2, f(7) = ?",a:"19"},
-    {q:"√196 + 3² = ?",a:"23"},
-    {q:"5x + 8 = 3x + 22. ¿x = ?",a:"7"},
-    {q:"Factoriza x² − 9. Primer factor:",a:"x-3"},
-    {q:"3² + 4² = ?",a:"25"}
+    {q:"lim (x → ∞) (3x + 5) / x = ?",a:"3"},
+    {q:"lim (x → ∞) (8x − 2) / (2x + 1) = ?",a:"4"},
+    {q:"lim (x → ∞) (5x² + 3) / (x² − 4) = ?",a:"5"},
+    {q:"lim (x → ∞) (6x² − 1) / (3x² + 2) = ?",a:"2"},
+    {q:"lim (x → ∞) (12x³ + 2x) / (3x³ − 1) = ?",a:"4"},
+    {q:"lim (x → ∞) (10x² + 5x) / (2x² + 1) = ?",a:"5"},
+    {q:"lim (x → ∞) (7x + 3) / (7x − 9) = ?",a:"1"},
+    {q:"lim (x → ∞) (9x² − 2x + 1) / (3x² + 4) = ?",a:"3"},
+    {q:"lim (x → ∞) (4x³ + x) / (2x³ − 1) = ?",a:"2"},
+    {q:"lim (x → ∞) 5 / x = ?",a:"0"},
+    {q:"lim (x → ∞) 12 / x² = ?",a:"0"},
+    {q:"lim (x → ∞) (2x² + 5) / (x³ + 1) = ?",a:"0"},
+    {q:"lim (x → ∞) (3x + 1) / (x² + 4) = ?",a:"0"},
+    {q:"lim (x → ∞) (4x² + 1) / (2x² − 3) = ?",a:"2"},
+    {q:"lim (x → ∞) (−6x² + 1) / (3x² + 2) = ?",a:"-2"}
   ],
 
   red: [
-    {q:"x² − 5x + 6 = 0. Raíz mayor:",a:"3"},
-    {q:"2ˣ = 32. ¿x = ?",a:"5"},
-    {q:"Derivada de x³:",a:"3x^2"},
-    {q:"log₁₀(1000) = ?",a:"3"},
-    {q:"3(x − 2) = 2x + 7. ¿x = ?",a:"13"},
-    {q:"x² = 121. Raíz positiva:",a:"11"}
+    {q:"Si f(x) = x², calcula f'(3).",a:"6"},
+    {q:"Si f(x) = 3x, calcula f'(5).",a:"3"},
+    {q:"Si f(x) = 5x², calcula f'(2).",a:"20"},
+    {q:"Si f(x) = x³, calcula f'(2).",a:"12"},
+    {q:"Si f(x) = 2x² + 4x, calcula f'(1).",a:"8"},
+    {q:"Si f(x) = 4x³, calcula f'(1).",a:"12"},
+    {q:"Si f(x) = 7x + 9, calcula f'(10).",a:"7"},
+    {q:"Si f(x) = x² + 3x, calcula f'(2).",a:"7"},
+    {q:"Si f(x) = 3x² − 2x, calcula f'(2).",a:"10"},
+    {q:"Si f(x) = 2x³ + x, calcula f'(1).",a:"7"},
+    {q:"Si f(x) = 6x², calcula f'(3).",a:"36"},
+    {q:"Si f(x) = x⁴, calcula f'(2).",a:"32"},
+    {q:"Si f(x) = 5x³ − 4x, calcula f'(1).",a:"11"},
+    {q:"Si f(x) = 9, calcula f'(5).",a:"0"},
+    {q:"Si f(x) = 2x² − 5, calcula f'(−2).",a:"-8"}
   ]
 };
 
@@ -237,6 +262,10 @@ let roomRef = null;
 let roomUnsubscribe = null;
 let rosterUnsubscribe = null;
 let rollRequestsUnsubscribe = null;
+let answerRequestsUnsubscribe = null;
+let remoteChallengeId = null;
+let remoteChallengeAnswered = false;
+let playerAnswerPending = false;
 let roomRoster = [];
 let selectedPlayerAnimal = null;
 let myPlayerProfile = null;
@@ -1034,59 +1063,64 @@ function nextTurn() {
 function openChallenge(options) {
   clearInterval(timerInterval);
 
-  challenge = {...options,answered:false};
-
   const player = players[currentPlayer];
-
-  let timeLeft = options.time+(player.extraTime||0);
+  const timeLeft = options.time + (player.extraTime || 0);
   player.extraTime = 0;
+  const startedAt = Date.now();
 
+  challenge = {
+    ...options,
+    id: `${startedAt}-${Math.random().toString(36).slice(2,8)}`,
+    targetUid: player.uid,
+    answered: false,
+    startedAt,
+    deadlineAt: startedAt + timeLeft * 1000,
+    playerDescription: options.description,
+    publicFeedback: "",
+    publicDescription: options.description
+  };
+
+  // El administrador observa el estado del reto, pero no responde.
+  // La pregunta y el formulario se muestran únicamente en el dispositivo del jugador activo.
   $("#modalCategory").textContent = options.category;
   $("#modalTitle").textContent = options.title;
-  $("#modalDescription").textContent = options.description;
-  $("#modalSymbol").textContent = options.symbol||"∑";
+  $("#modalDescription").textContent = `${player.name} debe resolver este ejercicio desde su propio dispositivo.`;
+  $("#modalSymbol").textContent = options.symbol || "∑";
   $("#questionText").textContent = options.question.q;
   $("#timerText").textContent = formatTime(timeLeft);
   $("#modalFeedback").textContent = "";
   $("#modalFeedback").className = "feedback";
-
   $("#modalActions").innerHTML = "";
   $("#timerBox").classList.remove("hidden");
-  $("#questionBox").classList.remove("hidden");
-  $("#answerForm").classList.remove("hidden");
-
+  $("#questionBox").classList.add("hidden");
+  $("#answerForm").classList.add("hidden");
   $("#answerInput").value = "";
-  $("#answerInput").disabled = false;
-
+  $("#answerInput").disabled = true;
+  $("#closeModal").hidden = false;
   $("#modalBackdrop").classList.remove("hidden");
   $("#rollBtn").disabled = true;
 
   timerInterval = setInterval(() => {
     if (!challenge || challenge.answered) return;
-
-    timeLeft--;
-
-    $("#timerText").textContent = formatTime(Math.max(0,timeLeft));
-
-    if (timeLeft <= 0) {
+    const remaining = Math.max(0, Math.ceil((challenge.deadlineAt - Date.now()) / 1000));
+    $("#timerText").textContent = formatTime(remaining);
+    if (remaining <= 0) {
       clearInterval(timerInterval);
-      resolveAnswer(false,true);
+      resolveAnswer(false, true);
     }
-  },1000);
+  }, 250);
 
-  setTimeout(() => $("#answerInput").focus(),100);
+  scheduleRoomSync();
 }
 
 function submitAnswer(event) {
   event.preventDefault();
-
-  if (!challenge || challenge.answered) return;
-
-  const correct =
-    normalizeAnswer($("#answerInput").value) ===
-    normalizeAnswer(challenge.question.a);
-
-  resolveAnswer(correct,false);
+  if (appMode === "player") {
+    submitPlayerAnswer();
+    return;
+  }
+  // El administrador nunca comprueba respuestas desde su panel.
+  showToast("El ejercicio debe responderse desde el dispositivo del jugador.");
 }
 
 function addModalButton(label,callback,primary=false) {
@@ -1103,7 +1137,7 @@ function addModalButton(label,callback,primary=false) {
 }
 
 function resolveAnswer(correct,timedOut) {
-  if (!challenge || challenge.answered) return;
+  if (appMode !== "admin" || !challenge || challenge.answered) return;
 
   clearInterval(timerInterval);
 
@@ -1159,8 +1193,11 @@ function resolveAnswer(correct,timedOut) {
     handleRentChallenge(c,player,correct);
   }
 
+  challenge.publicDescription = $("#modalDescription").textContent;
+  challenge.publicFeedback = $("#modalFeedback").textContent;
   renderPlayers();
   renderTokens();
+  scheduleRoomSync();
 }/* PROPIEDADES */
 
 function landOnProperty(space,player) {
@@ -1433,7 +1470,14 @@ function openSurprise() {
   const player = players[currentPlayer];
 
   challenge = {
+    id: `${Date.now()}-${Math.random().toString(36).slice(2,8)}`,
+    targetUid: player.uid,
     kind:"surpriseCard",
+    category:"CARTA SORPRESA",
+    title:card.title,
+    description:card.description,
+    symbol:"✧",
+    playerDescription:card.description,
     answered:true,
     card
   };
@@ -1546,6 +1590,9 @@ function openSurprise() {
   } else if (!$("#modalActions").children.length) {
     addModalButton("Continuar",finishChallenge,true);
   }
+
+  challenge.publicDescription = $("#modalDescription").textContent;
+  scheduleRoomSync();
 }
 
 /* INTERCAMBIO DE PROPIEDADES */
@@ -1706,6 +1753,7 @@ function chooseDiscountTarget() {
 /* CERRAR RETOS */
 
 function finishChallenge(advanceTurn=true) {
+  if (appMode !== "admin") return;
   clearInterval(timerInterval);
 
   $("#modalBackdrop").classList.add("hidden");
@@ -1805,6 +1853,7 @@ $("#rollBtn").addEventListener("click", () => {
 $("#answerForm").addEventListener("submit", submitAnswer);
 
 $("#closeModal").addEventListener("click",() => {
+  if (appMode !== "admin") return;
   if (!challenge) return;
   if (!challenge.answered) {
     showToast("Debes responder o esperar a que termine el tiempo.");
@@ -1820,7 +1869,7 @@ $("#resetBtn").addEventListener("click",() => {
 });
 
 $("#modalBackdrop").addEventListener("click",event => {
-  if (event.target === $("#modalBackdrop") && challenge?.answered) finishChallenge();
+  if (appMode === "admin" && event.target === $("#modalBackdrop") && challenge?.answered) finishChallenge();
 });
 
 $("#adminCreateRoomBtn").addEventListener("click", () => createRoom($("#adminCreateRoomBtn")));
@@ -1915,6 +1964,14 @@ async function createRoom(triggerButton = $("#adminCreateRoomBtn")) {
         rosterUnsubscribe();
         rosterUnsubscribe = null;
       }
+      if (rollRequestsUnsubscribe) {
+        rollRequestsUnsubscribe();
+        rollRequestsUnsubscribe = null;
+      }
+      if (answerRequestsUnsubscribe) {
+        answerRequestsUnsubscribe();
+        answerRequestsUnsubscribe = null;
+      }
       clearTimeout(roomSaveTimeout);
       clearInterval(timerInterval);
 
@@ -1977,7 +2034,10 @@ function showAdminLobby() {
 
 function subscribeToRoom() {
   if (roomUnsubscribe) roomUnsubscribe();
-  if (appMode === "admin") subscribeToRollRequests();
+  if (appMode === "admin") {
+    subscribeToRollRequests();
+    subscribeToAnswerRequests();
+  }
   roomUnsubscribe = onSnapshot(roomRef, snapshot => {
     if (!snapshot.exists()) {
       showToast("La sala ya no existe.");
@@ -2185,6 +2245,19 @@ function buildGameState() {
     started,
     gameOver,
     turnPhase: challenge ? "challenge" : (isMoving || isRollingDice) ? "moving" : "roll",
+    activeChallenge: challenge ? {
+      id: challenge.id || "surprise",
+      targetUid: challenge.targetUid || players[currentPlayer]?.uid || null,
+      kind: challenge.kind,
+      category: challenge.category || "RETO MATEMÁTICO",
+      title: challenge.title || "Resuelve el ejercicio",
+      description: challenge.publicDescription || challenge.playerDescription || challenge.description || "",
+      symbol: challenge.symbol || "∑",
+      question: challenge.question ? { q: challenge.question.q } : null,
+      deadlineAt: challenge.deadlineAt || null,
+      answered: !!challenge.answered,
+      feedback: challenge.publicFeedback || ""
+    } : null,
     diceOne: Number($("#dieOne").dataset.value || 1),
     diceTwo: Number($("#dieTwo").dataset.value || 1),
     diceTotal: $("#diceTotal").textContent,
@@ -2192,6 +2265,196 @@ function buildGameState() {
     log: Array.from($("#logList").querySelectorAll(".log-entry span:last-child"))
       .map(item => item.textContent).slice(0,6)
   };
+}
+
+
+async function submitPlayerAnswer() {
+  if (appMode !== "player" || !roomRef || !currentUid || !challenge || challenge.answered) return;
+  if (challenge.targetUid !== currentUid) {
+    showToast("Este ejercicio corresponde a otro jugador.");
+    return;
+  }
+  if (playerAnswerPending) return;
+
+  const answer = $("#answerInput").value.trim();
+  if (!answer || answer.length > 100) {
+    showToast("Escribe una respuesta válida.");
+    return;
+  }
+
+  playerAnswerPending = true;
+  $("#answerInput").disabled = true;
+  $("#answerForm button[type='submit']").disabled = true;
+  $("#modalDescription").textContent = "Respuesta enviada. Espera a que se registre el resultado.";
+  $("#rollHelp").textContent = "Tu respuesta fue enviada al administrador.";
+
+  try {
+    const answerRef = doc(roomRef, "answerRequests", currentUid);
+    await setDoc(answerRef, {
+      uid: currentUid,
+      challengeId: challenge.id,
+      answer,
+      createdAt: Date.now()
+    });
+  } catch (error) {
+    console.error("No se pudo enviar la respuesta:", error);
+    playerAnswerPending = false;
+    $("#answerInput").disabled = false;
+    $("#answerForm button[type='submit']").disabled = false;
+    $("#modalDescription").textContent = challenge.description || "Resuelve el ejercicio.";
+    showToast(error.code === "permission-denied"
+      ? "La sala no autorizó esta respuesta. Revisa las reglas de Firestore."
+      : "No se pudo enviar la respuesta. Comprueba tu conexión.");
+  }
+}
+
+function renderPlayerChallenge(remote) {
+  if (appMode !== "player") return;
+
+  if (!remote) {
+    if (remoteChallengeId !== null) clearInterval(timerInterval);
+    remoteChallengeId = null;
+    remoteChallengeAnswered = false;
+    playerAnswerPending = false;
+    challenge = null;
+    $("#modalBackdrop").classList.add("hidden");
+    $("#closeModal").hidden = false;
+    $("#questionBox").classList.remove("hidden");
+    $("#answerForm").classList.remove("hidden");
+    return;
+  }
+
+  const isQuestion = !!remote.question?.q;
+  const isTargetPlayer = remote.targetUid === currentUid;
+  const isSharedCard = remote.kind === "surpriseCard";
+  if (!isTargetPlayer && !isSharedCard) {
+    clearInterval(timerInterval);
+    remoteChallengeId = remote.id;
+    remoteChallengeAnswered = !!remote.answered;
+    playerAnswerPending = false;
+    $("#modalBackdrop").classList.add("hidden");
+    challenge = null;
+    return;
+  }
+
+  const isNewChallenge = remoteChallengeId !== remote.id;
+  const answerJustProcessed = !remoteChallengeAnswered && !!remote.answered;
+  if (isNewChallenge || answerJustProcessed) {
+    clearInterval(timerInterval);
+    playerAnswerPending = false;
+  }
+  remoteChallengeId = remote.id;
+  remoteChallengeAnswered = !!remote.answered;
+  challenge = {
+    ...remote,
+    answered: !!remote.answered,
+    question: remote.question ? { q: remote.question.q } : null
+  };
+
+  $("#modalCategory").textContent = remote.category || "RETO MATEMÁTICO";
+  $("#modalTitle").textContent = remote.title || "Resuelve el ejercicio";
+  $("#modalDescription").textContent = remote.description || "";
+  $("#modalSymbol").textContent = remote.symbol || "∑";
+  $("#modalFeedback").textContent = remote.feedback || "";
+  $("#modalFeedback").className = remote.feedback && remote.feedback.startsWith("Respuesta incorrecta")
+    ? "feedback bad" : "feedback";
+  $("#modalActions").innerHTML = "";
+  $("#closeModal").hidden = true;
+
+  if (isQuestion) {
+    $("#questionBox").classList.remove("hidden");
+    $("#questionText").textContent = remote.question.q;
+    $("#timerBox").classList.remove("hidden");
+  } else {
+    $("#questionBox").classList.add("hidden");
+    $("#timerBox").classList.add("hidden");
+  }
+
+  if (isQuestion && isTargetPlayer && !remote.answered) {
+    $("#answerForm").classList.remove("hidden");
+    $("#answerInput").disabled = playerAnswerPending;
+    $("#answerForm button[type='submit']").disabled = playerAnswerPending;
+    if (isNewChallenge) $("#answerInput").value = "";
+    if (playerAnswerPending) {
+      $("#modalDescription").textContent = "Respuesta enviada. Espera a que se registre el resultado.";
+    }
+  } else {
+    $("#answerForm").classList.add("hidden");
+  }
+
+  if (remote.answered) {
+    const note = document.createElement("p");
+    note.className = "helper";
+    note.textContent = isSharedCard
+      ? "El administrador aplicará el efecto de esta carta."
+      : "Respuesta registrada. El administrador está actualizando la partida.";
+    $("#modalActions").append(note);
+  } else if (!isTargetPlayer) {
+    const note = document.createElement("p");
+    note.className = "helper";
+    note.textContent = "El jugador correspondiente está resolviendo su reto.";
+    $("#modalActions").append(note);
+  }
+
+  $("#modalBackdrop").classList.remove("hidden");
+
+  if (isQuestion && isTargetPlayer && !remote.answered && remote.deadlineAt) {
+    const updateTimer = () => {
+      const remaining = Math.max(0, Math.ceil((remote.deadlineAt - Date.now()) / 1000));
+      $("#timerText").textContent = formatTime(remaining);
+    };
+    updateTimer();
+    if (isNewChallenge || answerJustProcessed) {
+      timerInterval = setInterval(updateTimer, 250);
+    }
+  } else if (remote.answered || !isQuestion) {
+    clearInterval(timerInterval);
+  }
+}
+
+function subscribeToAnswerRequests() {
+  if (appMode !== "admin" || !roomRef) return;
+  if (answerRequestsUnsubscribe) answerRequestsUnsubscribe();
+
+  answerRequestsUnsubscribe = onSnapshot(collection(roomRef, "answerRequests"), snapshot => {
+    snapshot.docChanges().forEach(change => {
+      if (change.type === "added") {
+        processAnswerRequest(change.doc.ref, change.doc.data());
+      }
+    });
+  }, error => {
+    console.error("Error al escuchar respuestas:", error);
+    showToast("No se pudieron recibir las respuestas de los jugadores.");
+  });
+}
+
+async function processAnswerRequest(requestRef, requestData) {
+  if (appMode !== "admin") return;
+
+  const activePlayer = players[currentPlayer];
+  const valid = started && !gameOver && challenge && !challenge.answered
+    && !!challenge.question && activePlayer
+    && activePlayer.uid === requestData.uid
+    && challenge.targetUid === requestData.uid
+    && challenge.id === requestData.challengeId
+    && typeof requestData.answer === "string"
+    && requestData.answer.trim().length > 0
+    && requestData.answer.length <= 100;
+
+  try {
+    await deleteDoc(requestRef);
+  } catch (error) {
+    console.error("No se pudo cerrar la solicitud de respuesta:", error);
+    showToast("No se pudo procesar la respuesta del jugador.");
+    return;
+  }
+
+  if (!valid || !challenge || challenge.answered) {
+    return;
+  }
+
+  const correct = normalizeAnswer(requestData.answer) === normalizeAnswer(challenge.question.a);
+  resolveAnswer(correct, false);
 }
 
 async function requestPlayerRoll() {
@@ -2358,7 +2621,7 @@ function restoreGameState(state) {
   $("#centerStatus").textContent = gameOver ? "PARTIDA FINALIZADA" : "LA PARTIDA ESTÁ EN CURSO";
   $("#rollBtn").hidden = true;
   $("#rollBtn").disabled = true;
-  $("#rollHelp").textContent = gameOver ? "La partida ha terminado." : "Los jugadores lanzan los dados desde sus dispositivos.";
+  $("#rollHelp").textContent = gameOver ? "La partida ha terminado." : "Los jugadores lanzan los dados y responden los ejercicios desde sus dispositivos.";
   $("#adminHomePanel").classList.add("hidden");
   $("#gameLayout").classList.remove("hidden");
   $("#resetBtn").hidden = false;
@@ -2412,11 +2675,14 @@ function renderPlayerGame(state,status) {
     $("#logList").innerHTML = "";
     state.log.slice(0,6).forEach(message => addLog(message));
   }
+  renderPlayerChallenge(state.activeChallenge || null);
   $("#centerStatus").textContent = status === "finished" ? "PARTIDA FINALIZADA" : "PARTIDA EN VIVO";
   const turnPlayer = players[currentPlayer];
   const isMyTurn = turnPlayer?.uid === currentUid;
   $("#playerLiveTitle").textContent = isMyTurn ? "¡Es tu turno!" : `Turno de ${turnPlayer?.name || "otro jugador"}`;
-  $("#playerLiveText").textContent = `${myPlayerProfile.name} · ${myPlayerProfile.animal.name}. Tú lanzas los dados cuando sea tu turno; el administrador gestiona la banca.`;
+  $("#playerLiveText").textContent = state.turnPhase === "challenge"
+    ? (isMyTurn ? "Resuelve el ejercicio desde este dispositivo." : `${turnPlayer?.name || "El jugador activo"} está resolviendo un ejercicio.`)
+    : `${myPlayerProfile.name} · ${myPlayerProfile.animal.name}. Tú lanzas los dados y respondes tus ejercicios desde este dispositivo; el administrador gestiona la banca.`;
   if (players[currentPlayer]?.uid !== currentUid || state.turnPhase !== "roll") {
     playerRollPending = false;
   }
