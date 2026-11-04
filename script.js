@@ -241,6 +241,7 @@ const SURPRISE_CARDS = [
 
 let spaces = [];
 let players = [];
+let maxPlayers = 4;
 let currentPlayer = 0;
 let round = 1;
 let started = false;
@@ -254,7 +255,7 @@ let isRollingDice = false;
 let playerRollPending = false;
 let surpriseDeck = [];
 
-/* MULTIJUGADOR: ADMINISTRADOR Y CUATRO JUGADORES */
+/* MULTIJUGADOR: ADMINISTRADOR Y DE 2 A 4 JUGADORES */
 let appMode = "admin";
 let currentUid = null;
 let roomCode = null;
@@ -266,6 +267,7 @@ let answerRequestsUnsubscribe = null;
 let playerActionRequestsUnsubscribe = null;
 let remoteChallengeId = null;
 let remoteChallengeAnswered = false;
+let remoteChallengeStateKey = null;
 let playerAnswerPending = false;
 let roomRoster = [];
 let selectedPlayerAnimal = null;
@@ -517,7 +519,7 @@ function renderBoard() {
 /* CREAR JUGADORES */
 
 function createPlayers() {
-  players = Array.from({length:4},(_,index) => ({
+  players = Array.from({length:maxPlayers},(_,index) => ({
     name: `Jugador ${index+1}`,
     animal: null,
     money: 1000,
@@ -616,6 +618,8 @@ function renderSetup() {
 function renderPlayers() {
   const list = $("#playersList");
   list.innerHTML = "";
+  const capacityLabel = $("#playersCapacityLabel");
+  if (capacityLabel) capacityLabel.textContent = `${players.length || maxPlayers} JUGADORES`;
 
   players.forEach((player,index) => {
     const row = document.createElement("div");
@@ -818,8 +822,8 @@ function showToast(message) {
 async function startGame() {
   if (appMode !== "admin" || !roomRef) return;
 
-  if (roomRoster.length !== 4) {
-    showToast("Necesitas cuatro jugadores para iniciar.");
+  if (roomRoster.length !== maxPlayers) {
+    showToast(`Necesitas ${maxPlayers} jugadores para iniciar.`);
     return;
   }
 
@@ -851,14 +855,15 @@ async function startGame() {
   $("#adminHomePanel").classList.add("hidden");
   $("#gameLayout").classList.remove("hidden");
   $("#setupPanel").classList.add("hidden");
-  $("#resetBtn").hidden = false;
+  // Después de iniciar, el administrador solo observa la partida.
+  $("#resetBtn").hidden = true;
   $("#rollBtn").hidden = true;
   $("#rollBtn").disabled = true;
   $("#rollHelp").textContent = "Cada jugador lanza los dados desde su propio dispositivo.";
   $("#centerStatus").textContent = "LA PARTIDA ESTÁ EN CURSO";
   $("#topRoomLabel").textContent = `SALA ${roomCode}`;
 
-  addLog("La partida ha comenzado. Los cuatro jugadores reciben $1.000.");
+  addLog(`La partida ha comenzado. Los ${maxPlayers} jugadores reciben $1.000.`);
   renderBoard();
   updateTurnLabel();
   renderPlayers();
@@ -1100,7 +1105,8 @@ function openChallenge(options) {
   $("#answerForm").classList.add("hidden");
   $("#answerInput").value = "";
   $("#answerInput").disabled = true;
-  $("#closeModal").hidden = false;
+  // El administrador ve el reto como observador; no puede cerrarlo ni intervenir.
+  $("#closeModal").hidden = true;
   $("#modalBackdrop").classList.remove("hidden");
   $("#rollBtn").disabled = true;
 
@@ -1278,21 +1284,7 @@ function landOnProperty(space,player) {
     higherDifficulty:higher
   });
 
-  addModalButton(`Pagar alquiler · $${rent}`,() => {
-    if (!challenge || challenge.answered) return;
-
-    const ownerIndex = space.owner;
-    const paid = settleDebt(player,rent);
-
-    players[ownerIndex].money += paid;
-
-    addLog(
-      `${player.name} pagó $${paid} de alquiler a ${players[ownerIndex].name}.`
-    );
-
-    renderPlayers();
-    finishChallenge();
-  });
+  // El jugador activo decide desde su celular si paga el alquiler o resuelve el reto.
 }
 
 function handlePropertyAnswer(c,player,correct) {
@@ -1364,7 +1356,6 @@ function handleRentChallenge(c,player,correct) {
       challenge.canContinue = true;
     }
 
-    addModalButton("Continuar",finishChallenge);
     return;
   }
 
@@ -1399,7 +1390,8 @@ function buyProperty(space,player,price,previousOwner=null) {
       `No tienes suficiente dinero. Necesitas $${price}.`;
 
     $("#modalActions").innerHTML = "";
-    addModalButton("Continuar",finishChallenge,true);
+    challenge.canContinue = true;
+    scheduleRoomSync();
     return;
   }
 
@@ -1487,6 +1479,7 @@ function openSurprise() {
     symbol:"✧",
     playerDescription:card.description,
     answered:true,
+    canContinue:true,
     card
   };
 
@@ -1502,6 +1495,7 @@ function openSurprise() {
   $("#answerForm").classList.add("hidden");
 
   $("#modalActions").innerHTML = "";
+  $("#closeModal").hidden = true;
   $("#modalBackdrop").classList.remove("hidden");
   $("#rollBtn").disabled = true;
 
@@ -1564,198 +1558,25 @@ function openSurprise() {
       break;
 
     case "goToJail":
-      // Se aplica al pulsar el botón de continuar.
+      $("#modalDescription").textContent = "La carta te envía a la cárcel. Confirma desde tu celular para aplicar el efecto.";
       break;
 
     case "trade":
       $("#modalDescription").textContent =
-        "Puedes proponer un intercambio. Si ambos jugadores aceptan, las propiedades cambiarán de dueño.";
-
-      addModalButton("Proponer intercambio",() => {
-        proposeTrade();
-      },true);
+        "Puedes proponer un intercambio desde tu celular. El otro jugador podrá aceptarlo o rechazarlo.";
       break;
 
     case "discount":
-      chooseDiscountTarget();
+      $("#modalDescription").textContent =
+        "Elige desde tu celular una propiedad rival para obtener la mitad del alquiler la próxima vez que caigas en ella.";
       break;
   }
 
   renderPlayers();
 
-  if (card.effect === "goToJail") {
-    addModalButton("Ir a la cárcel",() => {
-      finishChallenge(false);
-      sendPlayerToJail(player,"card");
-    },true);
-
-  } else if (movement !== null) {
-    addModalButton("Aplicar movimiento",() => {
-      finishChallenge(false);
-      movePlayer(movement);
-    },true);
-
-  } else if (!$("#modalActions").children.length) {
-    addModalButton("Continuar",finishChallenge,true);
-  }
-
   challenge.publicDescription = $("#modalDescription").textContent;
+  challenge.cardMovement = movement;
   scheduleRoomSync();
-}
-
-/* INTERCAMBIO DE PROPIEDADES */
-
-function proposeTrade() {
-  const player = players[currentPlayer];
-
-  const ownProperties = spaces.filter(s => s.owner === currentPlayer);
-
-  if (ownProperties.length === 0) {
-    showToast("No tienes propiedades para intercambiar.");
-    return;
-  }
-
-  const opponents = players
-    .map((p,index) => ({player:p,index}))
-    .filter(item =>
-      item.index !== currentPlayer &&
-      !item.player.eliminated &&
-      spaces.some(s => s.owner === item.index)
-    );
-
-  if (opponents.length === 0) {
-    showToast("Ningún rival tiene propiedades para intercambiar.");
-    return;
-  }
-
-  const opponentList = opponents
-    .map(item => `${item.index+1}: ${item.player.name}`)
-    .join("\n");
-
-  const opponentNumber = Number(prompt(
-    `Elige el jugador rival escribiendo su número:\n${opponentList}`
-  ));
-
-  const opponent = opponents.find(item => item.index === opponentNumber-1);
-
-  if (!opponent) {
-    showToast("Jugador no válido.");
-    return;
-  }
-
-  const rivalProperties = spaces.filter(s => s.owner === opponent.index);
-
-  const ownList = ownProperties.map(s =>
-    `Casilla ${s.index} ($${s.price})`
-  ).join("\n");
-
-  const rivalList = rivalProperties.map(s =>
-    `Casilla ${s.index} ($${s.price})`
-  ).join("\n");
-
-  const ownIndex = Number(prompt(
-    `¿Qué propiedad tuya deseas ofrecer?\n${ownList}\nEscribe el número de casilla:`
-  ));
-
-  const mySpace = ownProperties.find(s => s.index === ownIndex);
-
-  if (!mySpace) {
-    showToast("Tu propiedad no es válida.");
-    return;
-  }
-
-  const rivalIndex = Number(prompt(
-    `¿Qué propiedad deseas recibir?\n${rivalList}\nEscribe el número de casilla:`
-  ));
-
-  const rivalSpace = rivalProperties.find(s => s.index === rivalIndex);
-
-  if (!rivalSpace) {
-    showToast("La propiedad rival no es válida.");
-    return;
-  }
-
-  const accepted = confirm(
-    `${opponent.player.name}, ¿aceptas intercambiar la casilla ${rivalSpace.index} por la casilla ${mySpace.index}?`
-  );
-
-  if (!accepted) {
-    showToast("El intercambio fue rechazado.");
-    return;
-  }
-
-  mySpace.owner = opponent.index;
-  rivalSpace.owner = currentPlayer;
-
-  addLog(
-    `${player.name} y ${opponent.player.name} intercambiaron propiedades.`
-  );
-
-  renderTokens();
-  renderPlayers();
-
-  $("#modalDescription").textContent =
-    "¡Intercambio realizado! Las dos propiedades han cambiado de dueño.";
-
-  $("#modalActions").innerHTML = "";
-  addModalButton("Continuar",finishChallenge,true);
-}
-
-/* DESCUENTO DE ALQUILER */
-
-function chooseDiscountTarget() {
-  const opponents = players
-    .map((p,index) => ({player:p,index}))
-    .filter(item =>
-      item.index !== currentPlayer &&
-      !item.player.eliminated &&
-      spaces.some(s => s.owner === item.index)
-    );
-
-  if (opponents.length === 0) {
-    $("#modalDescription").textContent =
-      "Todavía no hay propiedades rivales. No puedes usar esta ventaja.";
-    return;
-  }
-
-  const list = opponents.map(item =>
-    `${item.index+1}: ${item.player.name}`
-  ).join("\n");
-
-  const number = Number(prompt(`Elige un rival:\n${list}`));
-  const opponent = opponents.find(item => item.index === number-1);
-
-  if (!opponent) {
-    $("#modalDescription").textContent =
-      "No seleccionaste un rival válido. La ventaja no se ha aplicado.";
-    return;
-  }
-
-  const properties = spaces.filter(s => s.owner === opponent.index);
-
-  const propertyList = properties.map(s =>
-    `Casilla ${s.index} · Alquiler $${COLORS[s.difficulty].rent}`
-  ).join("\n");
-
-  const propertyNumber = Number(prompt(
-    `Elige una propiedad:\n${propertyList}\nEscribe el número de casilla:`
-  ));
-
-  const target = properties.find(s => s.index === propertyNumber);
-
-  if (!target) {
-    $("#modalDescription").textContent =
-      "No seleccionaste una propiedad válida. La ventaja no se ha aplicado.";
-    return;
-  }
-
-  players[currentPlayer].discountTarget = {
-    owner:opponent.index,
-    spaceIndex:target.index
-  };
-
-  $("#modalDescription").textContent =
-    `La próxima vez que caigas en la casilla ${target.index}, pagarás la mitad del alquiler.`;
 }
 
 /* CERRAR RETOS */
@@ -1824,7 +1645,7 @@ async function resetGame() {
   $("#resetBtn").hidden = true;
   $("#modalBackdrop").classList.add("hidden");
   $("#rollBtn").disabled = true;
-  $("#rollHelp").textContent = "Los cuatro jugadores están registrados.";
+  $("#rollHelp").textContent = `Los ${maxPlayers} jugadores están registrados.`;
   $("#diceMessage").textContent = "Listos para jugar";
   $("#diceTotal").textContent = "—";
   $("#dieOne").dataset.value = 1;
@@ -1861,23 +1682,17 @@ $("#rollBtn").addEventListener("click", () => {
 $("#answerForm").addEventListener("submit", submitAnswer);
 
 $("#closeModal").addEventListener("click",() => {
-  if (appMode !== "admin") return;
-  if (!challenge) return;
-  if (!challenge.answered) {
-    showToast("Debes responder o esperar a que termine el tiempo.");
-    return;
-  }
-  finishChallenge();
+  if (appMode === "admin") showToast("El administrador solo observa la partida.");
 });
 
 $("#resetBtn").addEventListener("click",() => {
-  if (confirm("¿Quieres reiniciar la partida? Los cuatro jugadores permanecerán en la sala.")) {
+  if (confirm(`¿Quieres reiniciar la partida? Los ${maxPlayers} jugadores permanecerán en la sala.`)) {
     resetGame();
   }
 });
 
 $("#modalBackdrop").addEventListener("click",event => {
-  if (appMode === "admin" && event.target === $("#modalBackdrop") && challenge?.answered) finishChallenge();
+  // El administrador no cierra retos: el jugador activo decide desde su dispositivo.
 });
 
 $("#adminCreateRoomBtn").addEventListener("click", () => createRoom($("#adminCreateRoomBtn")));
@@ -1943,6 +1758,10 @@ async function createRoom(triggerButton = $("#adminCreateRoomBtn")) {
   button.disabled = true;
 
   const isNewRoomAction = button.id === "adminNewRoomBtn";
+  if (!isNewRoomAction) {
+    const selectedCapacity = Number($("#maxPlayersSelect")?.value || 4);
+    maxPlayers = [2,3,4].includes(selectedCapacity) ? selectedCapacity : 4;
+  }
   const message = isNewRoomAction ? $("#adminLobbyStatus") : $("#adminMessage");
   if (message) message.textContent = "Creando sala segura...";
 
@@ -1956,6 +1775,7 @@ async function createRoom(triggerButton = $("#adminCreateRoomBtn")) {
       await setDoc(candidateRef, {
         adminUid: currentUid,
         playerUids: [],
+        maxPlayers,
         status: "waiting",
         gameState: null,
         createdAt: serverTimestamp(),
@@ -2058,6 +1878,7 @@ function subscribeToRoom() {
     }
 
     const data = snapshot.data();
+    maxPlayers = Number(data.maxPlayers) || 4;
     if (appMode === "admin") {
       if (data.adminUid !== currentUid) {
         showToast("Esta sala pertenece a otra sesión de administrador.");
@@ -2068,7 +1889,7 @@ function subscribeToRoom() {
         restoreGameState(data.gameState);
         $("#adminHomePanel").classList.add("hidden");
         $("#gameLayout").classList.remove("hidden");
-        $("#resetBtn").hidden = false;
+        $("#resetBtn").hidden = true;
       } else if (data.status === "waiting" && started) {
         started = false;
         showAdminLobby();
@@ -2106,7 +1927,7 @@ function subscribeToRoster() {
     if (appMode === "admin") renderAdminRoster();
     if (appMode === "player") {
       renderPlayerAnimalChoices();
-      if (myPlayerProfile) $("#waitingCount").textContent = `${roomRoster.length} / 4 JUGADORES`;
+      if (myPlayerProfile) $("#waitingCount").textContent = `${roomRoster.length} / ${maxPlayers} JUGADORES`;
     }
   }, error => {
     console.error("Error al escuchar jugadores:",error);
@@ -2117,7 +1938,7 @@ function renderAdminRoster() {
   const list = $("#adminPlayersList");
   if (!list) return;
   list.innerHTML = "";
-  for (let index = 0; index < 4; index++) {
+  for (let index = 0; index < maxPlayers; index++) {
     const profile = roomRoster.find(item => item.seat === index);
     const row = document.createElement("div");
     row.className = "room-player-row";
@@ -2128,10 +1949,10 @@ function renderAdminRoster() {
     row.append(left,right);
     list.append(row);
   }
-  $("#adminLobbyStatus").textContent = roomRoster.length === 4
-    ? "Los cuatro jugadores están listos. Puedes iniciar."
-    : `Conectados: ${roomRoster.length} de 4 jugadores.`;
-  $("#adminStartBtn").disabled = roomRoster.length !== 4;
+  $("#adminLobbyStatus").textContent = roomRoster.length === maxPlayers
+    ? `Los ${maxPlayers} jugadores están listos. Puedes iniciar.`
+    : `Conectados: ${roomRoster.length} de ${maxPlayers} jugadores.`;
+  $("#adminStartBtn").disabled = roomRoster.length !== maxPlayers;
 }
 
 function renderPlayerAnimalChoices() {
@@ -2195,7 +2016,8 @@ async function joinRoom(event) {
       }
 
       const uids = roomData.playerUids || [];
-      if (uids.length >= 4) throw new Error("La sala ya está completa.");
+      const capacity = Number(roomData.maxPlayers) || 4;
+      if (uids.length >= capacity) throw new Error("La sala ya está completa.");
       if (uids.includes(currentUid)) throw new Error("Tu sesión ya está registrada en esta sala.");
 
       const existingProfiles = [];
@@ -2241,7 +2063,7 @@ function showPlayerWaiting(status="waiting") {
   $("#gameLayout").classList.add("hidden");
   $("#playerWaitingPanel").classList.remove("hidden");
   $("#resetBtn").hidden = true;
-  $("#waitingCount").textContent = `${roomRoster.length} / 4 JUGADORES`;
+  $("#waitingCount").textContent = `${roomRoster.length} / ${maxPlayers} JUGADORES`;
   if (myPlayerProfile) {
     $("#waitingAnimal").textContent = myPlayerProfile.animal.emoji;
     $("#waitingPlayerText").textContent = `${myPlayerProfile.name}, espera a que el administrador inicie la partida.`;
@@ -2271,7 +2093,13 @@ function buildGameState() {
       answered: !!challenge.answered,
       feedback: challenge.publicFeedback || "",
       purchaseOffer: challenge.purchaseOffer || null,
-      canContinue: !!challenge.canContinue
+      canContinue: !!challenge.canContinue,
+      rent: Number.isFinite(challenge.rent) ? challenge.rent : null,
+      cardEffect: challenge.card?.effect || null,
+      cardMovement: Number.isFinite(challenge.cardMovement) ? challenge.cardMovement : null,
+      tradeOffer: challenge.tradeOffer || null,
+      tradeResolved: !!challenge.tradeResolved,
+      discountApplied: !!challenge.discountApplied
     } : null,
     diceOne: Number($("#dieOne").dataset.value || 1),
     diceTwo: Number($("#dieTwo").dataset.value || 1),
@@ -2323,20 +2151,27 @@ async function submitPlayerAnswer() {
   }
 }
 
-async function requestPlayerChallengeAction(action) {
-  if (appMode !== "player" || !roomRef || !currentUid || !challenge || !challenge.answered) return;
-  if (challenge.targetUid !== currentUid) {
+async function requestPlayerChallengeAction(action, details = {}) {
+  if (appMode !== "player" || !roomRef || !currentUid || !challenge) return;
+  const isTradeRecipient = ["acceptTrade", "declineTrade"].includes(action)
+    && challenge.tradeOffer?.targetUid === currentUid;
+  const isActivePlayer = challenge.targetUid === currentUid;
+  const isRentPayment = action === "pay" && challenge.kind === "rentChallenge" && !challenge.answered;
+  if (!isTradeRecipient && !isActivePlayer) {
     showToast("Esta decisión corresponde a otro jugador.");
     return;
   }
+  if (!isRentPayment && !challenge.answered && !isTradeRecipient) return;
   if (playerAnswerPending) return;
   if (action === "buy" && !challenge.purchaseOffer) return;
+  if (["acceptTrade", "declineTrade"].includes(action) && !isTradeRecipient) return;
 
   playerAnswerPending = true;
   const buttons = $("#modalActions").querySelectorAll("button");
   buttons.forEach(button => button.disabled = true);
   $("#modalDescription").textContent = action === "buy"
     ? "Enviando tu compra..."
+    : action === "pay" ? "Enviando el pago del alquiler..."
     : "Enviando tu decisión...";
 
   try {
@@ -2344,6 +2179,7 @@ async function requestPlayerChallengeAction(action) {
       uid: currentUid,
       challengeId: challenge.id,
       action,
+      ...details,
       createdAt: Date.now()
     });
   } catch (error) {
@@ -2376,9 +2212,13 @@ function subscribeToPlayerActionRequests() {
 async function processPlayerActionRequest(requestRef, data) {
   if (appMode !== "admin") return;
   const activePlayer = players[currentPlayer];
-  const validBase = started && !gameOver && challenge && challenge.answered
-    && activePlayer && activePlayer.uid === data.uid
-    && challenge.targetUid === data.uid && challenge.id === data.challengeId;
+  const isActivePlayer = activePlayer && activePlayer.uid === data.uid
+    && challenge?.targetUid === data.uid;
+  const isTradeRecipient = challenge?.tradeOffer?.targetUid === data.uid;
+  const validBase = started && !gameOver && challenge
+    && challenge.id === data.challengeId
+    && (isActivePlayer || isTradeRecipient);
+
   try {
     await deleteDoc(requestRef);
   } catch (error) {
@@ -2388,11 +2228,25 @@ async function processPlayerActionRequest(requestRef, data) {
   }
   if (!validBase || !challenge) return;
 
-  if (data.action === "buy") {
+  const player = players[currentPlayer];
+
+  if (data.action === "pay" && isActivePlayer && challenge.kind === "rentChallenge" && !challenge.answered) {
+    const space = challenge.space;
+    const ownerIndex = space?.owner;
+    if (!Number.isInteger(ownerIndex) || !players[ownerIndex]) return;
+    const paid = settleDebt(player, challenge.rent || 0);
+    players[ownerIndex].money += paid;
+    addLog(`${player.name} pagó $${paid} de alquiler a ${players[ownerIndex].name}.`);
+    challenge.publicDescription = `${player.name} pagó $${paid} de alquiler. El turno ha terminado.`;
+    renderPlayers();
+    finishChallenge();
+    return;
+  }
+
+  if (data.action === "buy" && isActivePlayer && challenge.answered) {
     const offer = challenge.purchaseOffer;
     if (!offer || !Number.isInteger(offer.spaceIndex) || !Number.isFinite(offer.price)) return;
     const space = spaces.find(item => item.index === offer.spaceIndex);
-    const player = players[currentPlayer];
     if (!space || space.owner !== offer.previousOwner || player.money < offer.price) {
       challenge.purchaseOffer = null;
       challenge.publicDescription = "La compra ya no está disponible o no tienes saldo suficiente.";
@@ -2404,9 +2258,130 @@ async function processPlayerActionRequest(requestRef, data) {
     return;
   }
 
-  if (data.action === "continue" && challenge.canContinue) {
+  if (data.action === "continue" && isActivePlayer && challenge.answered && challenge.canContinue) {
     finishChallenge();
+    return;
   }
+
+  if (data.action === "discount" && isActivePlayer && challenge.answered && challenge.card?.effect === "discount") {
+    const ownerIndex = Number(data.ownerIndex);
+    const spaceIndex = Number(data.spaceIndex);
+    const target = spaces.find(item => item.index === spaceIndex);
+    if (!Number.isInteger(ownerIndex) || ownerIndex === currentPlayer || !target || target.owner !== ownerIndex) return;
+    player.discountTarget = { owner: ownerIndex, spaceIndex };
+    challenge.discountApplied = true;
+    challenge.publicDescription = `Descuento activado: la próxima vez que caigas en la casilla ${spaceIndex}, pagarás la mitad del alquiler.`;
+    challenge.canContinue = true;
+    scheduleRoomSync();
+    return;
+  }
+
+  if (data.action === "tradeOffer" && isActivePlayer && challenge.answered && challenge.card?.effect === "trade") {
+    const targetPlayer = players.findIndex(item => item.uid === data.targetUid && !item.eliminated);
+    const ownSpace = spaces.find(item => item.index === Number(data.ownSpaceIndex));
+    const targetSpace = spaces.find(item => item.index === Number(data.targetSpaceIndex));
+    if (targetPlayer < 0 || targetPlayer === currentPlayer || !ownSpace || !targetSpace
+      || ownSpace.owner !== currentPlayer || targetSpace.owner !== targetPlayer) return;
+    challenge.tradeResolved = false;
+    challenge.tradeOffer = {
+      fromUid: player.uid,
+      fromPlayerIndex: currentPlayer,
+      targetUid: players[targetPlayer].uid,
+      targetPlayerIndex: targetPlayer,
+      ownSpaceIndex: ownSpace.index,
+      targetSpaceIndex: targetSpace.index
+    };
+    challenge.canContinue = false;
+    challenge.publicDescription = `${player.name} propone intercambiar la casilla ${ownSpace.index} por la casilla ${targetSpace.index}. ${players[targetPlayer].name} debe aceptar o rechazar desde su celular.`;
+    scheduleRoomSync();
+    return;
+  }
+
+  if (["acceptTrade", "declineTrade"].includes(data.action) && isTradeRecipient) {
+    const offer = challenge.tradeOffer;
+    if (!offer) return;
+    if (data.action === "acceptTrade") {
+      const ownSpace = spaces.find(item => item.index === offer.ownSpaceIndex);
+      const targetSpace = spaces.find(item => item.index === offer.targetSpaceIndex);
+      if (ownSpace?.owner === offer.fromPlayerIndex && targetSpace?.owner === offer.targetPlayerIndex) {
+        ownSpace.owner = offer.targetPlayerIndex;
+        targetSpace.owner = offer.fromPlayerIndex;
+        addLog(`${players[offer.fromPlayerIndex].name} y ${players[offer.targetPlayerIndex].name} intercambiaron propiedades.`);
+      }
+      challenge.publicDescription = "¡Intercambio aceptado! Las propiedades cambiaron de dueño.";
+    } else {
+      challenge.publicDescription = `${players[offer.targetPlayerIndex].name} rechazó el intercambio.`;
+    }
+    challenge.tradeOffer = null;
+    challenge.tradeResolved = true;
+    challenge.canContinue = true;
+    renderTokens();
+    renderPlayers();
+    scheduleRoomSync();
+    return;
+  }
+
+  if (data.action === "moveCard" && isActivePlayer && challenge.answered && challenge.card?.effect === "move") {
+    const movement = Number(challenge.card.value);
+    finishChallenge(false);
+    movePlayer(movement);
+    return;
+  }
+
+  if (data.action === "jailCard" && isActivePlayer && challenge.answered && challenge.card?.effect === "goToJail") {
+    finishChallenge(false);
+    sendPlayerToJail(player, "card");
+  }
+}
+
+
+function chooseDiscountTargetFromPlayer() {
+  const opponents = players.map((player,index) => ({player,index}))
+    .filter(item => item.index !== currentPlayer && !item.player.eliminated
+      && spaces.some(space => space.owner === item.index));
+  if (!opponents.length) {
+    showToast("Todavía no hay propiedades rivales para elegir.");
+    return;
+  }
+  const opponentList = opponents.map(item => `${item.index+1}: ${item.player.name}`).join("\n");
+  const opponentNumber = Number(prompt(`Elige un rival:\n${opponentList}`));
+  const opponent = opponents.find(item => item.index === opponentNumber-1);
+  if (!opponent) return;
+  const properties = spaces.filter(space => space.owner === opponent.index);
+  const propertyList = properties.map(space => `Casilla ${space.index} · Alquiler $${COLORS[space.difficulty].rent}`).join("\n");
+  const propertyNumber = Number(prompt(`Elige una propiedad:\n${propertyList}\nEscribe el número de casilla:`));
+  const target = properties.find(space => space.index === propertyNumber);
+  if (!target) return;
+  requestPlayerChallengeAction("discount", { ownerIndex: opponent.index, spaceIndex: target.index });
+}
+
+function proposeTradeFromPlayer() {
+  const ownProperties = spaces.filter(space => space.owner === currentPlayer);
+  const opponents = players.map((player,index) => ({player,index}))
+    .filter(item => item.index !== currentPlayer && !item.player.eliminated
+      && spaces.some(space => space.owner === item.index));
+  if (!ownProperties.length || !opponents.length) {
+    showToast("Necesitas una propiedad y un rival con propiedades para negociar.");
+    return;
+  }
+  const opponentList = opponents.map(item => `${item.index+1}: ${item.player.name}`).join("\n");
+  const opponentNumber = Number(prompt(`Elige un rival:\n${opponentList}`));
+  const opponent = opponents.find(item => item.index === opponentNumber-1);
+  if (!opponent) return;
+  const ownList = ownProperties.map(space => `Casilla ${space.index} ($${space.price})`).join("\n");
+  const ownIndex = Number(prompt(`¿Qué propiedad tuya ofreces?\n${ownList}\nEscribe el número de casilla:`));
+  const ownSpace = ownProperties.find(space => space.index === ownIndex);
+  if (!ownSpace) return;
+  const rivalProperties = spaces.filter(space => space.owner === opponent.index);
+  const rivalList = rivalProperties.map(space => `Casilla ${space.index} ($${space.price})`).join("\n");
+  const targetIndex = Number(prompt(`¿Qué propiedad deseas recibir?\n${rivalList}\nEscribe el número de casilla:`));
+  const targetSpace = rivalProperties.find(space => space.index === targetIndex);
+  if (!targetSpace) return;
+  requestPlayerChallengeAction("tradeOffer", {
+    targetUid: opponent.player.uid,
+    ownSpaceIndex: ownSpace.index,
+    targetSpaceIndex: targetSpace.index
+  });
 }
 
 function renderPlayerChallenge(remote) {
@@ -2416,6 +2391,7 @@ function renderPlayerChallenge(remote) {
     if (remoteChallengeId !== null) clearInterval(timerInterval);
     remoteChallengeId = null;
     remoteChallengeAnswered = false;
+    remoteChallengeStateKey = null;
     playerAnswerPending = false;
     challenge = null;
     $("#modalBackdrop").classList.add("hidden");
@@ -2440,10 +2416,18 @@ function renderPlayerChallenge(remote) {
 
   const isNewChallenge = remoteChallengeId !== remote.id;
   const answerJustProcessed = !remoteChallengeAnswered && !!remote.answered;
-  if (isNewChallenge || answerJustProcessed) {
-    clearInterval(timerInterval);
-    playerAnswerPending = false;
-  }
+  const nextStateKey = JSON.stringify({
+    id: remote.id,
+    answered: !!remote.answered,
+    description: remote.description || "",
+    purchaseOffer: remote.purchaseOffer || null,
+    canContinue: !!remote.canContinue,
+    tradeOffer: remote.tradeOffer || null,
+    feedback: remote.feedback || ""
+  });
+  if (isNewChallenge || answerJustProcessed) clearInterval(timerInterval);
+  if (nextStateKey !== remoteChallengeStateKey) playerAnswerPending = false;
+  remoteChallengeStateKey = nextStateKey;
   remoteChallengeId = remote.id;
   remoteChallengeAnswered = !!remote.answered;
   challenge = {
@@ -2485,7 +2469,28 @@ function renderPlayerChallenge(remote) {
     $("#answerForm").classList.add("hidden");
   }
 
+  if (remote.kind === "rentChallenge" && isTargetPlayer && !remote.answered) {
+    addModalButton(`Pagar alquiler · $${remote.rent || 0}`, () => requestPlayerChallengeAction("pay"), false);
+  }
+
+  if (remote.tradeOffer?.targetUid === currentUid) {
+    addModalButton("Aceptar intercambio", () => requestPlayerChallengeAction("acceptTrade"), true);
+    addModalButton("Rechazar intercambio", () => requestPlayerChallengeAction("declineTrade"), false);
+  }
+
   if (remote.answered && isTargetPlayer) {
+    if (remote.cardEffect === "trade" && !remote.tradeOffer && !remote.tradeResolved) {
+      addModalButton("Proponer intercambio", proposeTradeFromPlayer, true);
+    }
+    if (remote.cardEffect === "discount" && !remote.discountApplied) {
+      addModalButton("Elegir propiedad", chooseDiscountTargetFromPlayer, true);
+    }
+    if (remote.cardEffect === "move") {
+      addModalButton("Aplicar movimiento", () => requestPlayerChallengeAction("moveCard"), true);
+    }
+    if (remote.cardEffect === "goToJail") {
+      addModalButton("Ir a la cárcel", () => requestPlayerChallengeAction("jailCard"), true);
+    }
     if (remote.purchaseOffer) {
       addModalButton(
         `Comprar · $${remote.purchaseOffer.price}`,
@@ -2493,7 +2498,7 @@ function renderPlayerChallenge(remote) {
         true
       );
     }
-    if (remote.canContinue) {
+    if (remote.canContinue && !remote.tradeOffer && !["move", "goToJail"].includes(remote.cardEffect)) {
       addModalButton("Continuar", () => requestPlayerChallengeAction("continue"), !remote.purchaseOffer);
     }
     if (playerAnswerPending) {
@@ -2505,9 +2510,11 @@ function renderPlayerChallenge(remote) {
   } else if (remote.answered) {
     const note = document.createElement("p");
     note.className = "helper";
-    note.textContent = isSharedCard
-      ? "El administrador aplicará el efecto de esta carta."
-      : "El jugador activo está eligiendo cómo continuar.";
+    note.textContent = remote.tradeOffer?.targetUid === currentUid
+      ? "Tienes una propuesta de intercambio pendiente."
+      : isSharedCard
+        ? "El jugador activo está resolviendo el efecto de la carta."
+        : "El jugador activo está eligiendo cómo continuar.";
     $("#modalActions").append(note);
   } else if (!isTargetPlayer) {
     const note = document.createElement("p");
@@ -2723,6 +2730,7 @@ function scheduleRoomSync() {
 function restoreGameState(state) {
   isApplyingRemoteState = true;
   players = (state.players || []).map(player => ({...player}));
+  maxPlayers = players.length || maxPlayers;
   spaces = (state.spaces || []).map(space => ({...space}));
   currentPlayer = state.currentPlayer || 0;
   round = state.round || 1;
@@ -2744,7 +2752,7 @@ function restoreGameState(state) {
   $("#rollHelp").textContent = gameOver ? "La partida ha terminado." : "Los jugadores lanzan los dados y responden los ejercicios desde sus dispositivos.";
   $("#adminHomePanel").classList.add("hidden");
   $("#gameLayout").classList.remove("hidden");
-  $("#resetBtn").hidden = false;
+  $("#resetBtn").hidden = true;
   $("#topRoomLabel").textContent = `SALA ${roomCode}`;
   if (Array.isArray(state.log)) {
     $("#logList").innerHTML = "";
@@ -2765,6 +2773,7 @@ function renderPlayerGame(state,status) {
 
   isApplyingRemoteState = true;
   players = (state.players || []).map(player => ({...player}));
+  maxPlayers = players.length || maxPlayers;
   spaces = (state.spaces || []).map(space => ({...space}));
   currentPlayer = state.currentPlayer || 0;
   round = state.round || 1;
@@ -2802,7 +2811,7 @@ function renderPlayerGame(state,status) {
   $("#playerLiveTitle").textContent = isMyTurn ? "¡Es tu turno!" : `Turno de ${turnPlayer?.name || "otro jugador"}`;
   $("#playerLiveText").textContent = state.turnPhase === "challenge"
     ? (isMyTurn ? "Resuelve el ejercicio desde este dispositivo." : `${turnPlayer?.name || "El jugador activo"} está resolviendo un ejercicio.`)
-    : `${myPlayerProfile.name} · ${myPlayerProfile.animal.name}. Tú lanzas los dados y respondes tus ejercicios desde este dispositivo; el administrador gestiona la banca.`;
+    : `${myPlayerProfile.name} · ${myPlayerProfile.animal.name}. Tú lanzas los dados y respondes tus ejercicios desde este dispositivo; el administrador observa la partida.`;
   if (players[currentPlayer]?.uid !== currentUid || state.turnPhase !== "roll") {
     playerRollPending = false;
   }

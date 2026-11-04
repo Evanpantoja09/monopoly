@@ -28,7 +28,15 @@
     <div class="access-card" id="adminWelcomePanel">
       <p class="eyebrow">PANEL DE CONTROL</p>
       <h1>Administrar <em>partida</em></h1>
-      <p class="access-copy">Crea una sala para que los cuatro participantes entren desde sus celulares. Tú administrarás el tablero y la banca; no ocuparás una ficha.</p>
+      <p class="access-copy">Crea una sala para que los participantes entren desde sus celulares. Elige cuántos jugarán; tú iniciarás la partida y después podrás observarla.</p>
+      <div class="capacity-field">
+        <label class="field-label" for="maxPlayersSelect">Cantidad de jugadores</label>
+        <select class="access-input" id="maxPlayersSelect">
+          <option value="2">2 jugadores</option>
+          <option value="3">3 jugadores</option>
+          <option value="4" selected>4 jugadores</option>
+        </select>
+      </div>
       <button class="primary-button" id="adminCreateRoomBtn">Crear sala <span class="arrow">↗</span></button>
       <p class="helper" id="adminMessage">Se creará un código y un QR para compartir con los jugadores.</p>
     </div>
@@ -44,7 +52,7 @@
           <button class="secondary-button" id="copyRoomLinkBtn">Copiar enlace de invitación</button>
           <button class="secondary-button new-room-button" id="adminNewRoomBtn" type="button">Crear otra sala</button>
           <div class="room-roster" id="adminPlayersList"></div>
-          <p class="helper" id="adminLobbyStatus">Esperando a los cuatro jugadores.</p>
+          <p class="helper" id="adminLobbyStatus">Esperando a los jugadores.</p>
           <button class="primary-button" id="adminStartBtn" disabled>Iniciar partida <span class="arrow">↗</span></button>
         </div>
       </div>
@@ -97,7 +105,7 @@
         <span><i class="dot purple"></i>Elevada</span><span><i class="dot red"></i>Muy difícil</span>
         <span><i class="dot surprise"></i>Sorpresa</span>
       </div>
-      <div class="player-live-notice hidden" id="playerLiveNotice"><strong id="playerLiveTitle">Partida en vivo</strong><span id="playerLiveText">El administrador está controlando la partida.</span></div>
+      <div class="player-live-notice hidden" id="playerLiveNotice"><strong id="playerLiveTitle">Partida en vivo</strong><span id="playerLiveText">El administrador está observando la partida.</span></div>
     </section>
 
     <aside class="sidebar">
@@ -111,7 +119,7 @@
         <button class="primary-button" id="rollBtn" disabled>Tirar los dados <span class="arrow">↗</span></button>
         <p class="helper" id="rollHelp">El administrador iniciará la partida.</p>
       </section>
-      <section class="panel"><div class="panel-heading"><div><p class="eyebrow">PARTICIPANTES</p><h2>Jugadores</h2></div><span class="small-label">4 JUGADORES</span></div><div class="players-list" id="playersList"></div></section>
+      <section class="panel"><div class="panel-heading"><div><p class="eyebrow">PARTICIPANTES</p><h2>Jugadores</h2></div><span class="small-label" id="playersCapacityLabel">4 JUGADORES</span></div><div class="players-list" id="playersList"></div></section>
       <section class="panel properties-panel"><div class="panel-heading"><div><p class="eyebrow">TU PATRIMONIO</p><h2>Propiedades</h2></div><span class="small-label" id="propertyCount">0 PROPIEDADES</span></div><p class="setup-description" id="propertyOwnerLabel">Propiedades del jugador actual</p><div id="myPropertiesList" class="my-properties-list"><p class="empty-log">Aún no hay propiedades.</p></div></section>
       <section class="panel hidden" id="setupPanel"><div class="panel-heading"><div><p class="eyebrow">PERSONALIZA TU PARTIDA</p><h2>Elige tu ficha</h2></div><span class="small-label">ANIMALES</span></div><p class="setup-description">Cada jugador debe escoger un animal diferente.</p><div class="player-tabs" id="playerTabs"></div><div class="animal-grid" id="animalGrid"></div><div class="setup-footer"><span id="selectionStatus">Jugador 1: elige una ficha</span><button class="primary-button compact" id="startBtn" disabled>Comenzar</button></div></section>
       <section class="panel"><div class="panel-heading"><div><p class="eyebrow">HISTORIAL</p><h2>Actividad</h2></div><span class="log-symbol">⌁</span></div><div class="log-list" id="logList"><p class="empty-log">La partida aún no ha comenzado.</p></div></section>
