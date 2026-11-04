@@ -1752,38 +1752,43 @@ function getInvitationUrl(code) {
   return url.toString();
 }
 
+
 async function createRoom(triggerButton = $("#adminCreateRoomBtn")) {
   const button = triggerButton;
   if (button.disabled) return;
   button.disabled = true;
 
+  // Obtener siempre una capacidad válida.
+  const selectedCapacity = Number($("#maxPlayersSelect")?.value || 4);
+  maxPlayers = [2, 3, 4].includes(selectedCapacity)
+    ? selectedCapacity
+    : 4;
+
   const isNewRoomAction = button.id === "adminNewRoomBtn";
-  if (!isNewRoomAction) {
-    const selectedCapacity = Number($("#maxPlayersSelect")?.value || 4);
-    maxPlayers = [2,3,4].includes(selectedCapacity) ? selectedCapacity : 4;
-  }
-  const message = isNewRoomAction ? $("#adminLobbyStatus") : $("#adminMessage");
+  const message = isNewRoomAction
+    ? $("#adminLobbyStatus")
+    : $("#adminMessage");
+
   if (message) message.textContent = "Creando sala segura...";
 
   try {
     for (let attempt = 0; attempt < 8; attempt++) {
       const code = randomRoomCode();
-      const candidateRef = doc(db,"rooms",code);
+      const candidateRef = doc(db, "rooms", code);
       const existing = await getDoc(candidateRef);
+
       if (existing.exists()) continue;
 
       await setDoc(candidateRef, {
         adminUid: currentUid,
         playerUids: [],
-        maxPlayers,
+        maxPlayers: maxPlayers,
         status: "waiting",
         gameState: null,
         createdAt: serverTimestamp(),
         updatedAt: Date.now()
       });
 
-      // La sala anterior permanece guardada en Firestore. Solo dejamos de
-      // escucharla desde esta ventana y cambiamos el panel a la sala nueva.
       if (roomUnsubscribe) {
         roomUnsubscribe();
         roomUnsubscribe = null;
@@ -1804,6 +1809,7 @@ async function createRoom(triggerButton = $("#adminCreateRoomBtn")) {
         playerActionRequestsUnsubscribe();
         playerActionRequestsUnsubscribe = null;
       }
+
       clearTimeout(roomSaveTimeout);
       clearInterval(timerInterval);
 
@@ -1819,23 +1825,40 @@ async function createRoom(triggerButton = $("#adminCreateRoomBtn")) {
 
       roomCode = code;
       roomRef = candidateRef;
-      localStorage.setItem("monopolyAdminRoom",code);
+
+      localStorage.setItem("monopolyAdminRoom", code);
+
       invitationUrl = getInvitationUrl(code);
+
       showAdminLobby();
       subscribeToRoom();
       subscribeToRoster();
+
       return;
     }
-    throw new Error("No se pudo encontrar un código de sala libre. Intenta nuevamente.");
+
+    throw new Error(
+      "No se pudo encontrar un código de sala libre. Intenta nuevamente."
+    );
+
   } catch (error) {
     console.error(error);
-    if (message) message.textContent = error.message || "No se pudo crear la sala.";
+
+    if (message) {
+      message.textContent = error.message || "No se pudo crear la sala.";
+    }
+
     console.error("No se pudo crear una sala:", error);
-    showToast("No se pudo crear la sala. Revisa la conexión y las reglas de Firestore.");
+
+    showToast(
+      "No se pudo crear la sala. Revisa la conexión y las reglas de Firestore."
+    );
+
   } finally {
     button.disabled = false;
   }
 }
+
 
 function showAdminLobby() {
   $("#adminHomePanel").classList.remove("hidden");
