@@ -375,6 +375,9 @@ function checkWinner() {
       : "PARTIDA FINALIZADA";
 
     $("#turnLabel").textContent = "PARTIDA TERMINADA";
+    // El administrador puede reiniciar cuando la partida termina.
+    // Los jugadores nunca ven este control.
+    $("#resetBtn").hidden = appMode !== "admin";
 
     if (winner) {
       addLog(`¡${winner.name} ha ganado la partida!`);
@@ -2780,7 +2783,8 @@ function restoreGameState(state) {
   $("#rollHelp").textContent = gameOver ? "La partida ha terminado." : "Los jugadores lanzan los dados y responden los ejercicios desde sus dispositivos.";
   $("#adminHomePanel").classList.add("hidden");
   $("#gameLayout").classList.remove("hidden");
-  $("#resetBtn").hidden = true;
+  // Al restaurar una partida terminada, mostrar el reinicio solo al administrador.
+  $("#resetBtn").hidden = !(appMode === "admin" && gameOver);
   $("#topRoomLabel").textContent = `SALA ${roomCode}`;
   if (Array.isArray(state.log)) {
     $("#logList").innerHTML = "";
