@@ -822,8 +822,13 @@ function showToast(message) {
 async function startGame() {
   if (appMode !== "admin" || !roomRef) return;
 
-  if (roomRoster.length !== maxPlayers) {
-    showToast(`Necesitas ${maxPlayers} jugadores para iniciar.`);
+  if (roomRoster.length < 2) {
+    showToast("Necesitas al menos 2 jugadores para iniciar.");
+    return;
+  }
+
+  if (roomRoster.length > maxPlayers) {
+    showToast(`Esta sala admite como máximo ${maxPlayers} jugadores.`);
     return;
   }
 
@@ -1972,10 +1977,10 @@ function renderAdminRoster() {
     row.append(left,right);
     list.append(row);
   }
-  $("#adminLobbyStatus").textContent = roomRoster.length === maxPlayers
-    ? `Los ${maxPlayers} jugadores están listos. Puedes iniciar.`
-    : `Conectados: ${roomRoster.length} de ${maxPlayers} jugadores.`;
-  $("#adminStartBtn").disabled = roomRoster.length !== maxPlayers;
+  $("#adminLobbyStatus").textContent = roomRoster.length < 2
+    ? `Conectados: ${roomRoster.length} de ${maxPlayers}. Necesitas al menos 2 jugadores para iniciar.`
+    : `Hay ${roomRoster.length} jugadores conectados. Puedes iniciar la partida.`;
+  $("#adminStartBtn").disabled = roomRoster.length < 2 || roomRoster.length > maxPlayers;
 }
 
 function renderPlayerAnimalChoices() {
